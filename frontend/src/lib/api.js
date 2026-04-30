@@ -1,11 +1,15 @@
 import { getUser } from './auth'
 
+// Empty in dev → Vite proxies /api/* to the backend. Set VITE_API_URL in
+// production (e.g. on Vercel) to the public URL of the deployed backend.
+const API_BASE = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
+
 async function request(path, { method = 'GET', body } = {}) {
   const user = getUser()
   const headers = { 'Content-Type': 'application/json' }
   if (user?.email) headers['X-User-Email'] = user.email
 
-  const res = await fetch(`/api${path}`, {
+  const res = await fetch(`${API_BASE}/api${path}`, {
     method,
     headers,
     body: body ? JSON.stringify(body) : undefined,
