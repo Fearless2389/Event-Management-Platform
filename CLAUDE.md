@@ -23,8 +23,8 @@ The full design spec is at `C:\Users\ruthv\.claude\plans\project-4-event-managem
 | QR generation | `qrcode` npm package, server-side PNG generation |
 | QR scanning | `html5-qrcode`, browser webcam |
 | Payments | **Razorpay Payment Gateway test mode** (NOT Razorpay X — that's banking/payouts, wrong product). Razorpay Node SDK + Checkout JS + HMAC signature verification |
-| JSP server | Tomcat 10.1.x (Jakarta EE) on port 8080 |
-| Java | JDK 25 (`C:/Users/ruthv/.jdks/openjdk-25`); Maven `pom.xml` sets `<release>21</release>` for stability |
+| JSP server | Tomcat 9.0.117 (javax namespace, installed by `choco install tomcat`) on port 8080. NOTE: choco's `tomcat` package is v9, not v10. Pom.xml uses `javax.servlet`/`javax.servlet.jsp` deps accordingly. |
+| Java | JDK 11 or 25 (we have both); Maven `pom.xml` sets `<release>11</release>` for Tomcat 9 compatibility |
 | Build tool (JSP) | Maven |
 | MongoDB Java driver | `mongodb-driver-sync` (org.mongodb) |
 

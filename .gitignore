@@ -30,3 +30,10 @@ Thumbs.db
 # MongoDB local data (if user dumps it here)
 data/
 *.bson
+
+# Tomcat runtime (project-local CATALINA_BASE — log files, deployed wars, work dir)
+tomcat-base/logs/
+tomcat-base/temp/
+tomcat-base/work/
+tomcat-base/webapps/*.war
+tomcat-base/webapps/event-mgmt/
