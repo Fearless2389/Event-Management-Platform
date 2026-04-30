@@ -51,7 +51,7 @@ router.get('/:id/tickets', requireUser, async (req, res, next) => {
 
 router.post('/', requireUser, async (req, res, next) => {
   try {
-    const { title, description, venue, dateTime, capacity, ticketTiers, imageUrl } = req.body
+    const { title, description, venue, dateTime, capacity, ticketTiers, imageUrl, category } = req.body
     const ev = await Event.create({
       organizerEmail: req.userEmail,
       title,
@@ -66,6 +66,7 @@ router.post('/', requireUser, async (req, res, next) => {
         sold: 0,
       })),
       imageUrl: imageUrl || '',
+      category: category || 'Other',
     })
     res.status(201).json(ev)
   } catch (e) {

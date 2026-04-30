@@ -93,18 +93,25 @@ export default function Scan() {
 
   return (
     <div className="max-w-xl mx-auto">
-      <div className="flex items-center justify-between mb-4">
-        <h1 className="text-2xl font-semibold">Scan tickets</h1>
+      <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+        <div>
+          <h1 className="text-2xl font-extrabold">Scan tickets</h1>
+          <p className="text-sm opacity-60 mt-1">Validate entry at your event door.</p>
+        </div>
         {!result && (
-          <div className="join">
+          <div className="flex bg-base-200 rounded-xl p-1 text-sm">
             <button
-              className={`btn btn-sm join-item ${mode === 'camera' ? 'btn-primary' : ''}`}
+              className={`px-4 py-1.5 rounded-lg transition ${
+                mode === 'camera' ? 'gradient-cta' : 'opacity-70'
+              }`}
               onClick={() => setMode('camera')}
             >
               Camera
             </button>
             <button
-              className={`btn btn-sm join-item ${mode === 'paste' ? 'btn-primary' : ''}`}
+              className={`px-4 py-1.5 rounded-lg transition ${
+                mode === 'paste' ? 'gradient-cta' : 'opacity-70'
+              }`}
               onClick={() => setMode('paste')}
             >
               Paste code
@@ -116,30 +123,28 @@ export default function Scan() {
       {result ? (
         <ResultCard result={result} onScanAnother={scanAnother} />
       ) : mode === 'camera' ? (
-        <div className="card bg-base-100 shadow">
-          <div className="card-body items-center">
-            <div id={REGION_ID} className="w-full max-w-sm" />
-            <p className="text-sm opacity-60 mt-2">
-              Point at the QR code on the printable ticket or email.
-            </p>
+        <div className="surface rounded-2xl p-5">
+          <div className="scanner-frame mx-auto" style={{ maxWidth: 360 }}>
+            <div id={REGION_ID} className="w-full" />
           </div>
+          <p className="text-sm opacity-60 mt-4 text-center">
+            Point at the QR code on the printable ticket or email.
+          </p>
         </div>
       ) : (
-        <form onSubmit={submitPasted} className="card bg-base-100 shadow">
-          <div className="card-body gap-3">
-            <label className="form-control">
-              <span className="label-text mb-1">Ticket QR payload</span>
-              <input
-                className="input input-bordered"
-                value={pasted}
-                onChange={(e) => setPasted(e.target.value)}
-                placeholder="Paste the ticket ID from the QR"
-              />
-            </label>
-            <button className="btn btn-primary" type="submit">
-              Check in
-            </button>
-          </div>
+        <form onSubmit={submitPasted} className="surface rounded-2xl p-6 space-y-3">
+          <label className="block">
+            <span className="text-sm font-medium mb-1.5 block">Ticket QR payload</span>
+            <input
+              className="input input-bordered w-full"
+              value={pasted}
+              onChange={(e) => setPasted(e.target.value)}
+              placeholder="Paste the ticket ID from the QR"
+            />
+          </label>
+          <button className="gradient-cta w-full py-3 rounded-xl font-semibold" type="submit">
+            Check in
+          </button>
         </form>
       )}
 
@@ -149,50 +154,58 @@ export default function Scan() {
 }
 
 function ResultCard({ result, onScanAnother }) {
-  const tone =
-    result.kind === 'ok' ? 'border-success' : result.kind === 'already' ? 'border-warning' : 'border-error'
+  const accent =
+    result.kind === 'ok'
+      ? 'border-success/50 bg-success/5'
+      : result.kind === 'already'
+        ? 'border-warning/50 bg-warning/5'
+        : 'border-error/50 bg-error/5'
+
   const icon = result.kind === 'ok' ? '✅' : result.kind === 'already' ? '⚠️' : '❌'
   const title =
-    result.kind === 'ok' ? 'Check-in successful' : result.kind === 'already' ? 'Already checked in' : 'Check-in failed'
+    result.kind === 'ok'
+      ? 'Check-in successful'
+      : result.kind === 'already'
+        ? 'Already checked in'
+        : 'Check-in failed'
 
   return (
-    <div className={`card bg-base-100 shadow border-t-4 ${tone}`}>
-      <div className="card-body items-center text-center">
-        <div className="text-5xl">{icon}</div>
-        <h2 className="card-title">{title}</h2>
+    <div className={`surface rounded-2xl p-7 text-center border-2 ${accent} animate-fade-up`}>
+      <div className="text-6xl mb-3 animate-pop-in">{icon}</div>
+      <h2 className="text-xl font-bold">{title}</h2>
 
-        {result.kind === 'ok' && (
-          <>
-            <p className="text-base">
-              <strong>{result.attendeeName}</strong> · {result.tierName}
-            </p>
-            <p className="text-xs opacity-60">Checked in at {new Date().toLocaleString()}</p>
-          </>
+      {result.kind === 'ok' && (
+        <>
+          <p className="text-base mt-3">
+            <strong>{result.attendeeName}</strong> · {result.tierName}
+          </p>
+          <p className="text-xs opacity-60 mt-1">
+            Checked in at {new Date().toLocaleString()}
+          </p>
+        </>
+      )}
+
+      {(result.kind === 'already' || result.kind === 'error') && (
+        <p className="text-sm opacity-70 mt-3">{result.message}</p>
+      )}
+
+      <div className="mt-6 space-y-2">
+        {result.jspCheckinUrl && (
+          <a
+            href={result.jspCheckinUrl}
+            target="_blank"
+            rel="noreferrer"
+            className="block w-full py-2.5 rounded-xl border border-white/10 hover:border-white/30 hover:bg-white/5 transition text-sm"
+          >
+            Open JSP confirmation page
+          </a>
         )}
-
-        {result.kind === 'already' && (
-          <p className="text-sm opacity-70">{result.message}</p>
-        )}
-
-        {result.kind === 'error' && (
-          <p className="text-sm opacity-70">{result.message}</p>
-        )}
-
-        <div className="card-actions w-full flex-col gap-2 mt-4">
-          {result.jspCheckinUrl && (
-            <a
-              href={result.jspCheckinUrl}
-              target="_blank"
-              rel="noreferrer"
-              className="btn btn-outline btn-sm w-full"
-            >
-              Open JSP confirmation page
-            </a>
-          )}
-          <button onClick={onScanAnother} className="btn btn-primary w-full">
-            Scan another
-          </button>
-        </div>
+        <button
+          onClick={onScanAnother}
+          className="gradient-cta w-full py-3 rounded-xl font-semibold"
+        >
+          Scan another
+        </button>
       </div>
     </div>
   )

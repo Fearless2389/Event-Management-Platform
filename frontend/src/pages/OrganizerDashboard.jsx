@@ -23,35 +23,41 @@ export default function OrganizerDashboard() {
     <div className="space-y-8">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <h1 className="text-3xl font-bold">Your events</h1>
+          <h1 className="text-3xl font-extrabold">Your events</h1>
           <p className="text-sm opacity-60 mt-1">
             Manage everything you've organized in one place.
           </p>
         </div>
-        <Link to="/create" className="gradient-cta px-5 py-2 rounded-lg font-semibold text-sm shadow-md">
+        <Link
+          to="/create"
+          className="gradient-cta px-5 py-2.5 rounded-xl font-semibold text-sm"
+        >
           + New event
         </Link>
       </div>
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Events" value={stats.eventCount} />
-        <StatCard label="Tickets sold" value={stats.ticketsSold} />
-        <StatCard label="Revenue" value={`₹${stats.revenue.toLocaleString('en-IN')}`} />
-        <StatCard label="Upcoming this week" value={stats.upcomingThisWeek} />
+        <StatCard label="Events" value={stats.eventCount} icon="🎪" />
+        <StatCard label="Tickets sold" value={stats.ticketsSold} icon="🎟️" />
+        <StatCard label="Revenue" value={`₹${stats.revenue.toLocaleString('en-IN')}`} icon="💰" />
+        <StatCard label="This week" value={stats.upcomingThisWeek} icon="🗓️" />
       </div>
 
       {loading ? (
         <div className="space-y-3">
           {Array.from({ length: 3 }).map((_, i) => (
-            <div key={i} className="h-24 rounded-xl bg-base-300 animate-pulse" />
+            <div key={i} className="h-24 rounded-2xl bg-base-200 animate-pulse" />
           ))}
         </div>
       ) : events.length === 0 ? (
-        <div className="text-center py-16 bg-base-100 rounded-2xl shadow">
-          <div className="text-5xl mb-3">🎪</div>
-          <p className="font-semibold text-lg mb-1">No events yet</p>
-          <p className="text-sm opacity-70 mb-4">Get started by creating your first event.</p>
-          <Link to="/create" className="gradient-cta inline-block px-5 py-2 rounded-lg font-semibold text-sm">
+        <div className="text-center py-16 surface rounded-2xl">
+          <div className="text-5xl mb-3 animate-pop-in">🎪</div>
+          <p className="font-bold text-lg mb-1">No events yet</p>
+          <p className="text-sm opacity-70 mb-5">Get started by creating your first event.</p>
+          <Link
+            to="/create"
+            className="gradient-cta inline-block px-5 py-2.5 rounded-xl font-semibold text-sm"
+          >
             Create your first event
           </Link>
         </div>
@@ -66,11 +72,14 @@ export default function OrganizerDashboard() {
   )
 }
 
-function StatCard({ label, value }) {
+function StatCard({ label, value, icon }) {
   return (
-    <div className="bg-base-100 rounded-xl shadow p-4">
-      <div className="text-xs uppercase tracking-wider opacity-60 mb-1">{label}</div>
-      <div className="text-2xl sm:text-3xl font-bold brand-gradient-text">{value}</div>
+    <div className="surface rounded-2xl p-4 sm:p-5">
+      <div className="flex items-start justify-between mb-2">
+        <span className="text-xs uppercase tracking-wider opacity-60 font-medium">{label}</span>
+        <span className="text-lg">{icon}</span>
+      </div>
+      <div className="text-2xl sm:text-3xl font-extrabold brand-gradient-text">{value}</div>
     </div>
   )
 }
@@ -84,8 +93,8 @@ function EventRow({ event }) {
   const soldPct = total > 0 ? Math.round((sold / total) * 100) : 0
 
   return (
-    <div className="bg-base-100 rounded-xl shadow p-4 flex items-center gap-4">
-      <div className="w-16 h-16 rounded-lg overflow-hidden flex-shrink-0">
+    <div className="surface rounded-2xl p-4 flex items-center gap-4 card-hover">
+      <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
         {event.imageUrl ? (
           <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
         ) : (
@@ -96,9 +105,16 @@ function EventRow({ event }) {
       </div>
 
       <div className="flex-1 min-w-0">
-        <Link to={`/events/${event._id}`} className="font-semibold hover:underline">
-          {event.title}
-        </Link>
+        <div className="flex items-center gap-2 flex-wrap">
+          <Link to={`/events/${event._id}`} className="font-semibold hover:underline truncate">
+            {event.title}
+          </Link>
+          {event.category && event.category !== 'Other' && (
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+              {event.category}
+            </span>
+          )}
+        </div>
         <div className="text-xs opacity-70 mt-0.5">
           {new Date(event.dateTime).toLocaleString(undefined, {
             day: 'numeric',
@@ -110,22 +126,22 @@ function EventRow({ event }) {
           · {event.venue}
         </div>
 
-        <div className="mt-2 flex items-center gap-2">
-          <div className="flex-1 max-w-xs h-1.5 rounded-full bg-base-300 overflow-hidden">
+        <div className="mt-2.5 flex items-center gap-2">
+          <div className="flex-1 max-w-xs h-1.5 rounded-full bg-white/5 overflow-hidden">
             <div
               className="h-full brand-gradient transition-all"
               style={{ width: `${soldPct}%` }}
             />
           </div>
           <span className="text-xs opacity-70 whitespace-nowrap">
-            {sold}/{total} sold
+            {sold}/{total}
           </span>
         </div>
       </div>
 
       <Link
         to={`/scan/${event._id}`}
-        className="btn btn-sm btn-outline flex-shrink-0"
+        className="text-sm px-4 py-2 rounded-lg border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/10 transition flex-shrink-0"
       >
         Scan
       </Link>

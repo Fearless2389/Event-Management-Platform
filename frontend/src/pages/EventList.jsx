@@ -1,11 +1,14 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
+
+const CATEGORIES = ['All', 'Music', 'Tech', 'Comedy', 'Sports', 'Theatre', 'Other']
 
 export default function EventList() {
   const [events, setEvents] = useState([])
   const [error, setError] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [activeCategory, setActiveCategory] = useState('All')
 
   useEffect(() => {
     api
@@ -15,75 +18,102 @@ export default function EventList() {
       .finally(() => setLoading(false))
   }, [])
 
-  if (loading)
-    return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <div key={i} className="aspect-[3/4] rounded-2xl bg-base-300 animate-pulse" />
-        ))}
-      </div>
-    )
+  const filtered = useMemo(() => {
+    if (activeCategory === 'All') return events
+    return events.filter((e) => (e.category || 'Other') === activeCategory)
+  }, [events, activeCategory])
+
+  if (loading) return <SkeletonGrid />
 
   if (error) return <div className="alert alert-error">{error}</div>
 
   if (events.length === 0)
     return (
-      <div className="text-center py-20">
-        <div className="text-6xl mb-4">🎟️</div>
-        <p className="text-2xl font-semibold mb-1">No events yet</p>
-        <p className="text-sm opacity-70">Sign in as an organizer and create the first one.</p>
+      <div className="text-center py-24">
+        <div className="text-7xl mb-6 animate-pop-in">🎟️</div>
+        <p className="text-3xl font-bold mb-2">No events yet</p>
+        <p className="opacity-70">Sign in as an organizer and create the first one.</p>
       </div>
     )
 
   const featured = events[0]
-  const rest = events.slice(1)
   const featuredMinPrice = Math.min(...featured.ticketTiers.map((t) => t.price))
 
   return (
     <div className="space-y-10">
       <Link
         to={`/events/${featured._id}`}
-        className="block relative overflow-hidden rounded-2xl shadow-lg card-hover"
+        className="block relative overflow-hidden rounded-3xl card-hover group"
       >
         <div className="aspect-[16/6] sm:aspect-[16/5] relative">
           {featured.imageUrl ? (
             <img
               src={featured.imageUrl}
               alt={featured.title}
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
             <div className="absolute inset-0 brand-gradient" />
           )}
-          <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/40 to-transparent" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 text-white">
-            <div className="text-xs uppercase tracking-widest opacity-80 mb-2">
-              ⚡ Featured event
+            <div className="text-xs uppercase tracking-[0.2em] font-semibold opacity-80 mb-2 flex items-center gap-2">
+              <span className="w-1.5 h-1.5 bg-pink-400 rounded-full animate-pulse" />
+              Featured event
             </div>
-            <h1 className="text-2xl sm:text-4xl font-bold mb-2">{featured.title}</h1>
-            <p className="text-sm sm:text-base opacity-90 mb-4">
-              {new Date(featured.dateTime).toLocaleString()} · {featured.venue}
+            <h1 className="text-3xl sm:text-5xl font-extrabold mb-2 max-w-3xl leading-tight">
+              {featured.title}
+            </h1>
+            <p className="text-sm sm:text-base opacity-90 mb-5">
+              {new Date(featured.dateTime).toLocaleDateString(undefined, {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+              })}{' '}
+              · {featured.venue}
             </p>
-            <span className="gradient-cta inline-flex items-center px-5 py-2 rounded-full font-semibold text-sm shadow-lg">
+            <span className="gradient-cta inline-flex items-center px-6 py-2.5 rounded-full font-semibold text-sm">
               Book now from ₹{featuredMinPrice}
             </span>
           </div>
         </div>
       </Link>
 
+      <div className="flex items-center gap-2 overflow-x-auto pb-2 -mx-4 px-4 sm:mx-0 sm:px-0">
+        {CATEGORIES.map((cat) => {
+          const active = activeCategory === cat
+          return (
+            <button
+              key={cat}
+              onClick={() => setActiveCategory(cat)}
+              className={`whitespace-nowrap px-4 py-2 rounded-full text-sm font-medium transition ${
+                active
+                  ? 'gradient-cta'
+                  : 'surface surface-hover text-base-content/80'
+              }`}
+            >
+              {cat}
+            </button>
+          )
+        })}
+      </div>
+
       <div>
-        <h2 className="text-2xl font-bold mb-5">Browse all events</h2>
-        <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
-          {rest.length === 0 ? (
-            <p className="opacity-60 col-span-full text-sm">
-              That's the only event for now — check back soon!
-            </p>
-          ) : (
-            rest.map((ev) => (
+        <h2 className="text-2xl font-bold mb-5">
+          {activeCategory === 'All' ? 'Browse all events' : `${activeCategory} events`}
+        </h2>
+
+        {filtered.length === 0 ? (
+          <p className="opacity-60 text-sm py-8 text-center">
+            No events in this category yet.
+          </p>
+        ) : (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {filtered.map((ev) => (
               <EventCard key={ev._id} event={ev} />
-            ))
-          )}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )
@@ -100,27 +130,32 @@ function EventCard({ event }) {
   return (
     <Link
       to={`/events/${event._id}`}
-      className="card-hover block relative overflow-hidden rounded-2xl shadow-md bg-base-100"
+      className="card-hover block relative overflow-hidden rounded-2xl surface group"
     >
       <div className="aspect-[3/4] relative">
         {event.imageUrl ? (
           <img
             src={event.imageUrl}
             alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover"
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
         ) : (
           <div className="absolute inset-0 brand-gradient flex items-center justify-center p-4">
-            <span className="text-white font-semibold text-center text-lg leading-tight">
+            <span className="text-white font-bold text-center text-lg leading-tight">
               {event.title}
             </span>
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/85 via-black/20 to-transparent" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
+        {event.category && event.category !== 'Other' && (
+          <span className="absolute top-3 left-3 backdrop-blur bg-black/40 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10">
+            {event.category}
+          </span>
+        )}
         {lowStock && (
-          <span className="absolute top-3 right-3 bg-red-500 text-white text-[11px] font-semibold px-2 py-1 rounded-full">
-            Selling fast
+          <span className="absolute top-3 right-3 bg-red-500 text-white text-[11px] font-bold px-2.5 py-1 rounded-full shadow-lg">
+            🔥 Selling fast
           </span>
         )}
 
@@ -137,12 +172,30 @@ function EventCard({ event }) {
         </div>
       </div>
 
-      <div className="px-4 py-3 flex items-center justify-between bg-base-100">
+      <div className="px-4 py-3 flex items-center justify-between">
         <span className="text-xs opacity-60">
-          from <span className="font-semibold text-base-content">₹{minPrice}</span>
+          from <span className="font-bold text-base-content">₹{minPrice}</span>
         </span>
-        <span className="text-xs font-medium brand-gradient-text">Book now →</span>
+        <span className="text-xs font-semibold brand-gradient-text">Book now →</span>
       </div>
     </Link>
+  )
+}
+
+function SkeletonGrid() {
+  return (
+    <div className="space-y-10">
+      <div className="aspect-[16/5] rounded-3xl bg-base-200 animate-pulse" />
+      <div className="flex gap-2">
+        {Array.from({ length: 5 }).map((_, i) => (
+          <div key={i} className="h-9 w-20 rounded-full bg-base-200 animate-pulse" />
+        ))}
+      </div>
+      <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+        {Array.from({ length: 6 }).map((_, i) => (
+          <div key={i} className="aspect-[3/4] rounded-2xl bg-base-200 animate-pulse" />
+        ))}
+      </div>
+    </div>
   )
 }

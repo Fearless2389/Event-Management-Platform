@@ -12,53 +12,79 @@ export default function Layout() {
   }
 
   return (
-    <div className="min-h-screen bg-base-200">
-      <div className="navbar bg-base-100 shadow-sm">
-        <div className="flex-1">
-          <Link to="/" className="btn btn-ghost text-xl normal-case">
-            🎟️ EventHub
+    <div className="min-h-screen text-base-content">
+      <header className="glass sticky top-0 z-40">
+        <div className="max-w-6xl mx-auto px-4 h-16 flex items-center gap-4">
+          <Link to="/" className="flex items-center gap-2 text-xl font-extrabold">
+            <span className="brand-gradient w-8 h-8 rounded-lg flex items-center justify-center text-white">
+              🎟️
+            </span>
+            <span className="brand-gradient-text tracking-tight">EventHub</span>
           </Link>
-        </div>
-        <div className="flex-none gap-2">
-          <NavLink to="/" end className="btn btn-ghost btn-sm">
-            Browse
-          </NavLink>
-          {user?.role === 'organizer' && (
-            <>
-              <NavLink to="/dashboard" className="btn btn-ghost btn-sm">
-                Dashboard
-              </NavLink>
-              <NavLink to="/create" className="btn btn-primary btn-sm">
-                + New event
-              </NavLink>
-            </>
-          )}
-          {user ? (
-            <div className="flex items-center gap-2 ml-2">
-              <span className="text-sm opacity-70 hidden md:inline">
-                {user.name} ({user.role})
-              </span>
-              <button className="btn btn-outline btn-sm" onClick={handleLogout}>
-                Logout
-              </button>
-            </div>
-          ) : (
-            <Link to="/login" className="btn btn-primary btn-sm">
-              Login
-            </Link>
-          )}
-        </div>
-      </div>
 
-      <main className="max-w-6xl mx-auto px-4 py-8">
+          <nav className="hidden sm:flex ml-4 gap-1 text-sm">
+            <NavLink to="/" end className={navClass}>
+              Browse
+            </NavLink>
+            {user?.role === 'organizer' && (
+              <>
+                <NavLink to="/dashboard" className={navClass}>
+                  Dashboard
+                </NavLink>
+                <NavLink to="/create" className={navClass}>
+                  Create
+                </NavLink>
+              </>
+            )}
+          </nav>
+
+          <div className="ml-auto flex items-center gap-2">
+            {user ? (
+              <div className="flex items-center gap-3">
+                <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full surface text-xs">
+                  <span
+                    className={`w-2 h-2 rounded-full ${
+                      user.role === 'organizer' ? 'bg-pink-400' : 'bg-violet-400'
+                    }`}
+                  />
+                  <span className="font-medium">{user.name}</span>
+                  <span className="opacity-50">·</span>
+                  <span className="opacity-70 capitalize">{user.role}</span>
+                </div>
+                <button
+                  className="text-sm px-3 py-1.5 rounded-lg border border-white/10 hover:border-white/30 hover:bg-white/5 transition"
+                  onClick={handleLogout}
+                >
+                  Logout
+                </button>
+              </div>
+            ) : (
+              <Link
+                to="/login"
+                className="gradient-cta text-sm px-4 py-1.5 rounded-lg font-semibold"
+              >
+                Sign in
+              </Link>
+            )}
+          </div>
+        </div>
+      </header>
+
+      <main className="max-w-6xl mx-auto px-4 py-8 pb-32 sm:pb-12 animate-fade-up">
         <Outlet />
       </main>
 
-      <footer className="footer footer-center p-4 text-base-content/60 text-xs">
-        <aside>
-          EventHub · MVP build · Razorpay test mode · Ethereal email
-        </aside>
+      <footer className="text-center text-xs opacity-50 py-8 px-4">
+        <div className="max-w-6xl mx-auto border-t border-white/5 pt-6">
+          EventHub · Test mode build · Razorpay test · Ethereal email
+        </div>
       </footer>
     </div>
   )
+}
+
+function navClass({ isActive }) {
+  return `px-3 py-2 rounded-lg transition ${
+    isActive ? 'text-white bg-white/10' : 'text-base-content/70 hover:text-white hover:bg-white/5'
+  }`
 }
