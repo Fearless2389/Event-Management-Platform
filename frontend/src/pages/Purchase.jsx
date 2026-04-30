@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
+import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import { getUser } from '../lib/auth'
 
@@ -49,7 +50,7 @@ export default function Purchase() {
         name: event?.title || 'Event ticket',
         description: `${decodedTier} ticket`,
         prefill: { name: user.name, email: user.email },
-        theme: { color: '#7c3aed' },
+        theme: { color: '#a855f7' },
         handler: async (response) => {
           try {
             setStatus('verifying')
@@ -69,6 +70,7 @@ export default function Purchase() {
             })
             nav(`/success?${params.toString()}`)
           } catch (e) {
+            toast.error(e.message)
             setError(e.message)
             setStatus('idle')
           }
@@ -78,17 +80,20 @@ export default function Purchase() {
         },
       })
       rzp.on('payment.failed', (resp) => {
-        setError(resp.error?.description || 'Payment failed')
+        const msg = resp.error?.description || 'Payment failed'
+        toast.error(msg)
+        setError(msg)
         setStatus('idle')
       })
       rzp.open()
     } catch (e) {
+      toast.error(e.message)
       setError(e.message)
       setStatus('idle')
     }
   }
 
-  if (error) return <div className="alert alert-error max-w-md mx-auto">{error}</div>
+  if (error && !event) return <div className="alert alert-error max-w-md mx-auto">{error}</div>
   if (!event) return <div className="text-center opacity-60 py-12">Loading…</div>
 
   const tier = event.ticketTiers.find((t) => t.name === decodedTier)
@@ -96,12 +101,15 @@ export default function Purchase() {
 
   return (
     <div className="max-w-md mx-auto">
-      <div className="brand-gradient-border bg-base-100 rounded-2xl shadow-lg overflow-hidden">
+      <div className="brand-gradient-border surface rounded-2xl overflow-hidden">
         <div className="p-6 space-y-5">
-          <h1 className="text-2xl font-bold">Confirm purchase</h1>
+          <div>
+            <div className="text-xs uppercase tracking-widest opacity-60 mb-1">Confirm purchase</div>
+            <h1 className="text-2xl font-extrabold">Almost there 🎉</h1>
+          </div>
 
           <div className="flex gap-3 items-center">
-            <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+            <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
               {event.imageUrl ? (
                 <img
                   src={event.imageUrl}
@@ -123,7 +131,7 @@ export default function Purchase() {
             </div>
           </div>
 
-          <div className="bg-base-200 rounded-xl p-4 space-y-2 text-sm">
+          <div className="bg-base-100/50 border border-white/5 rounded-xl p-4 space-y-2.5 text-sm">
             <div className="flex justify-between">
               <span className="opacity-70">{tier.name} ticket × 1</span>
               <span className="font-semibold">₹{tier.price}</span>
@@ -136,17 +144,19 @@ export default function Purchase() {
                 <span className="text-xs opacity-60">{user.email}</span>
               </span>
             </div>
-            <hr className="my-2 border-base-300" />
-            <div className="flex justify-between text-base font-bold">
+            <hr className="border-white/5" />
+            <div className="flex justify-between text-base font-bold pt-1">
               <span>Total</span>
               <span className="brand-gradient-text">₹{tier.price}</span>
             </div>
           </div>
 
-          <div className="text-xs opacity-60 space-y-1 bg-base-200/50 rounded-lg p-3">
-            <div className="font-medium opacity-90">Test payment methods</div>
+          <div className="text-xs opacity-70 space-y-1.5 bg-base-100/50 border border-white/5 rounded-xl p-3.5">
+            <div className="font-semibold opacity-90 uppercase tracking-wider text-[10px]">
+              Test payment methods
+            </div>
             <div>
-              UPI (recommended): <code className="text-purple-600">success@razorpay</code>
+              UPI (recommended): <code>success@razorpay</code>
             </div>
             <div>
               Card: <code>4111 1111 1111 1111</code>, any future expiry, any CVV
@@ -156,12 +166,14 @@ export default function Purchase() {
           <button
             onClick={pay}
             disabled={status !== 'idle'}
-            className="gradient-cta w-full rounded-xl py-3 font-semibold text-base shadow-md"
+            className="gradient-cta w-full rounded-xl py-3.5 font-bold text-base"
           >
             {status === 'idle' && `Pay ₹${tier.price} via Razorpay`}
             {status === 'loading' && 'Opening Razorpay…'}
             {status === 'verifying' && 'Verifying payment…'}
           </button>
+
+          {error && <div className="alert alert-error text-sm py-2">{error}</div>}
         </div>
       </div>
     </div>

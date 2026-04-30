@@ -20,6 +20,11 @@ const EventSchema = new mongoose.Schema(
     capacity: { type: Number, required: true, min: 1 },
     ticketTiers: { type: [TierSchema], validate: (v) => v.length > 0 },
     imageUrl: { type: String, default: '' },
+    category: {
+      type: String,
+      enum: ['Music', 'Tech', 'Comedy', 'Sports', 'Theatre', 'Other'],
+      default: 'Other',
+    },
   },
   { timestamps: true },
 )
