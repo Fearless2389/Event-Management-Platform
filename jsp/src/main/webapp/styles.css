@@ -1,0 +1,131 @@
+:root {
+  --bg: #f3f4f6;
+  --card: #ffffff;
+  --ink: #111827;
+  --muted: #6b7280;
+  --primary: #570df8;
+  --ok: #10b981;
+  --warn: #f59e0b;
+  --error: #ef4444;
+  --border: #e5e7eb;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--ink);
+  margin: 0;
+  padding: 32px 16px;
+}
+
+.muted { color: var(--muted); }
+
+.card {
+  background: var(--card);
+  max-width: 520px;
+  margin: 32px auto;
+  padding: 32px;
+  border-radius: 12px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+}
+
+/* ===== Ticket ===== */
+.ticket {
+  background: var(--card);
+  max-width: 720px;
+  margin: 0 auto;
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.08);
+  border: 1px solid var(--border);
+}
+
+.ticket-header {
+  background: var(--primary);
+  color: #fff;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.ticket-header .brand { font-size: 18px; font-weight: 600; }
+
+.badge {
+  background: rgba(255,255,255,0.18);
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 12px;
+  letter-spacing: 1px;
+  font-weight: 600;
+}
+.badge-checked { background: var(--ok); }
+
+.ticket-body {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 32px;
+  padding: 32px;
+  align-items: center;
+  border-bottom: 2px dashed var(--border);
+}
+
+.ticket-info h1 { margin: 0 0 8px; font-size: 28px; }
+.ticket-info p { margin: 4px 0; }
+.ticket-info hr { margin: 16px 0; border: 0; border-top: 1px solid var(--border); }
+.ticket-info code { background: var(--bg); padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+.ticket-id { font-size: 12px; color: var(--muted); margin-top: 12px; }
+
+.ticket-qr { text-align: center; }
+.ticket-qr img { display: block; border-radius: 8px; }
+
+.ticket-footer {
+  padding: 16px 32px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.print-btn {
+  background: var(--primary);
+  color: #fff;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+}
+.print-btn:hover { opacity: 0.9; }
+
+@media print {
+  body { background: #fff; padding: 0; }
+  .ticket { box-shadow: none; border: 1px solid #ccc; }
+  .ticket-footer { display: none; }
+}
+
+/* ===== Check-in ===== */
+.checkin {
+  background: var(--card);
+  max-width: 480px;
+  width: 100%;
+  margin: 32px auto;
+  padding: 40px 32px;
+  border-radius: 16px;
+  text-align: center;
+  box-shadow: 0 6px 32px rgba(0,0,0,0.08);
+  border-top: 6px solid var(--ok);
+}
+.checkin.warn { border-top-color: var(--warn); }
+.checkin .big { font-size: 64px; line-height: 1; margin-bottom: 8px; }
+.checkin h1 { margin: 12px 0 4px; }
+.checkin hr { margin: 24px 0; border: 0; border-top: 1px solid var(--border); }
+
+.row {
+  display: flex;
+  justify-content: space-between;
+  padding: 8px 0;
+  font-size: 14px;
+}
+.row span { color: var(--muted); }
