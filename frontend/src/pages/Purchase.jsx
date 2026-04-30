@@ -49,7 +49,7 @@ export default function Purchase() {
         name: event?.title || 'Event ticket',
         description: `${decodedTier} ticket`,
         prefill: { name: user.name, email: user.email },
-        theme: { color: '#570df8' },
+        theme: { color: '#7c3aed' },
         handler: async (response) => {
           try {
             setStatus('verifying')
@@ -88,48 +88,81 @@ export default function Purchase() {
     }
   }
 
-  if (error) return <div className="alert alert-error">{error}</div>
-  if (!event) return <div className="text-center opacity-60">Loading…</div>
+  if (error) return <div className="alert alert-error max-w-md mx-auto">{error}</div>
+  if (!event) return <div className="text-center opacity-60 py-12">Loading…</div>
 
   const tier = event.ticketTiers.find((t) => t.name === decodedTier)
-  if (!tier)
-    return <div className="alert alert-error">Tier not found.</div>
+  if (!tier) return <div className="alert alert-error max-w-md mx-auto">Tier not found.</div>
 
   return (
-    <div className="max-w-md mx-auto card bg-base-100 shadow">
-      <div className="card-body gap-4">
-        <h1 className="card-title">Confirm purchase</h1>
-        <div className="bg-base-200 rounded p-4">
-          <div className="text-lg font-medium">{event.title}</div>
-          <div className="text-sm opacity-70">
-            {new Date(event.dateTime).toLocaleString()} · {event.venue}
-          </div>
-          <hr className="my-3 border-base-300" />
-          <div className="flex justify-between text-sm">
-            <span>{tier.name} ticket</span>
-            <span>₹{tier.price}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span>Buyer</span>
-            <span>
-              {user.name} ({user.email})
-            </span>
-          </div>
-        </div>
+    <div className="max-w-md mx-auto">
+      <div className="brand-gradient-border bg-base-100 rounded-2xl shadow-lg overflow-hidden">
+        <div className="p-6 space-y-5">
+          <h1 className="text-2xl font-bold">Confirm purchase</h1>
 
-        <div className="text-xs opacity-60">
-          Test card: <code>4111 1111 1111 1111</code> · any future expiry · any CVV
-        </div>
+          <div className="flex gap-3 items-center">
+            <div className="w-20 h-20 rounded-lg overflow-hidden flex-shrink-0">
+              {event.imageUrl ? (
+                <img
+                  src={event.imageUrl}
+                  alt={event.title}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="brand-gradient w-full h-full flex items-center justify-center text-white text-xs font-semibold p-1 text-center leading-tight">
+                  {event.title.slice(0, 14)}
+                </div>
+              )}
+            </div>
+            <div className="min-w-0">
+              <div className="font-semibold truncate">{event.title}</div>
+              <div className="text-xs opacity-70 mt-0.5">
+                {new Date(event.dateTime).toLocaleString()}
+              </div>
+              <div className="text-xs opacity-70">{event.venue}</div>
+            </div>
+          </div>
 
-        <button
-          onClick={pay}
-          disabled={status !== 'idle'}
-          className="btn btn-primary"
-        >
-          {status === 'idle' && `Pay ₹${tier.price} via Razorpay`}
-          {status === 'loading' && 'Opening Razorpay…'}
-          {status === 'verifying' && 'Verifying payment…'}
-        </button>
+          <div className="bg-base-200 rounded-xl p-4 space-y-2 text-sm">
+            <div className="flex justify-between">
+              <span className="opacity-70">{tier.name} ticket × 1</span>
+              <span className="font-semibold">₹{tier.price}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="opacity-70">Buyer</span>
+              <span className="text-right truncate max-w-[60%]">
+                {user.name}
+                <br />
+                <span className="text-xs opacity-60">{user.email}</span>
+              </span>
+            </div>
+            <hr className="my-2 border-base-300" />
+            <div className="flex justify-between text-base font-bold">
+              <span>Total</span>
+              <span className="brand-gradient-text">₹{tier.price}</span>
+            </div>
+          </div>
+
+          <div className="text-xs opacity-60 space-y-1 bg-base-200/50 rounded-lg p-3">
+            <div className="font-medium opacity-90">Test payment methods</div>
+            <div>
+              UPI (recommended): <code className="text-purple-600">success@razorpay</code>
+            </div>
+            <div>
+              Card: <code>4111 1111 1111 1111</code>, any future expiry, any CVV
+            </div>
+          </div>
+
+          <button
+            onClick={pay}
+            disabled={status !== 'idle'}
+            className="gradient-cta w-full rounded-xl py-3 font-semibold text-base shadow-md"
+          >
+            {status === 'idle' && `Pay ₹${tier.price} via Razorpay`}
+            {status === 'loading' && 'Opening Razorpay…'}
+            {status === 'verifying' && 'Verifying payment…'}
+          </button>
+        </div>
       </div>
     </div>
   )

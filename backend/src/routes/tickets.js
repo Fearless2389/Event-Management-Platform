@@ -28,8 +28,20 @@ router.post('/checkin', requireUser, async (req, res, next) => {
       return res.status(403).json({ error: 'Not the organizer of this event' })
     }
 
+    const jspBase = process.env.JSP_BASE_URL || 'http://localhost:8080/event-mgmt'
+
     if (ticket.checkedIn) {
-      const jspBase = process.env.JSP_BASE_URL || 'http://localhost:8080/event-mgmt'
+      // Idempotency: rapid successive scans (within 10s) count as the same check-in,
+      // not a duplicate. Protects against scanner firing multiple decode events on one QR.
+      const elapsed = Date.now() - new Date(ticket.checkedInAt).getTime()
+      if (elapsed < 10_000) {
+        return res.json({
+          ticketId: String(ticket._id),
+          attendeeName: ticket.attendeeName,
+          tierName: ticket.tierName,
+          jspCheckinUrl: `${jspBase}/checkin.jsp?id=${ticket._id}`,
+        })
+      }
       return res.status(409).json({
         error: 'Ticket already checked in',
         checkedInAt: ticket.checkedInAt,
@@ -41,7 +53,6 @@ router.post('/checkin', requireUser, async (req, res, next) => {
     ticket.checkedInAt = new Date()
     await ticket.save()
 
-    const jspBase = process.env.JSP_BASE_URL || 'http://localhost:8080/event-mgmt'
     res.json({
       ticketId: String(ticket._id),
       attendeeName: ticket.attendeeName,
