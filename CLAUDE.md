@@ -16,7 +16,7 @@ The full design spec is at `C:\Users\ruthv\.claude\plans\project-4-event-managem
 
 | Layer | Choice |
 |---|---|
-| Frontend | Vite + React 18 + React Router 6 + Tailwind + daisyUI |
+| Frontend | Vite + React 19 + React Router 7 + Tailwind v3 + daisyUI v4 (downgraded from v4/v5 due to Vite 8 + rolldown resolution bug — known issue) |
 | Backend | Node 20 LTS + Express 4 + Mongoose 8 |
 | Database | Local MongoDB Community 7 (`mongodb://localhost:27017/eventmgmt`) |
 | Email | Nodemailer + Ethereal (dev SMTP, browser preview — NOT real Gmail) |
