@@ -44,7 +44,7 @@ export default function Layout() {
                 <div className="hidden md:flex items-center gap-2 px-3 py-1.5 rounded-full surface text-xs">
                   <span
                     className={`w-2 h-2 rounded-full ${
-                      user.role === 'organizer' ? 'bg-pink-400' : 'bg-violet-400'
+                      user.role === 'organizer' ? 'bg-yellow-400' : 'bg-neutral-400'
                     }`}
                   />
                   <span className="font-medium">{user.name}</span>

@@ -20,7 +20,7 @@ export default function Login() {
     <div className="grid lg:grid-cols-5 gap-8 max-w-5xl mx-auto -my-2">
       <aside className="lg:col-span-3 hidden lg:block relative overflow-hidden rounded-2xl min-h-[480px]">
         <div className="absolute inset-0 brand-gradient" />
-        <div className="absolute inset-0 bg-gradient-to-br from-black/30 via-transparent to-black/40" />
+        <div className="absolute inset-0 bg-gradient-to-br from-black/40 via-black/20 to-black/55" />
 
         <div className="relative h-full p-10 flex flex-col justify-between text-white">
           <div className="flex items-center gap-2 text-xl font-extrabold">
@@ -134,7 +134,7 @@ function RoleOption({ label, desc, checked, onSelect }) {
       onClick={onSelect}
       className={`text-left p-3 rounded-xl border-2 transition ${
         checked
-          ? 'border-purple-400 bg-purple-500/10'
+          ? 'border-yellow-400 bg-yellow-400/10'
           : 'border-white/10 hover:border-white/30'
       }`}
     >

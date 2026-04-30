@@ -109,7 +109,7 @@ function EventRow({ event }) {
             {event.title}
           </Link>
           {event.category && event.category !== 'Other' && (
-            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-purple-500/20 text-purple-300">
+            <span className="text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full bg-yellow-400/15 text-yellow-300">
               {event.category}
             </span>
           )}
@@ -140,7 +140,7 @@ function EventRow({ event }) {
 
       <Link
         to={`/scan/${event._id}`}
-        className="text-sm px-4 py-2 rounded-lg border border-white/10 hover:border-purple-400/60 hover:bg-purple-500/10 transition flex-shrink-0"
+        className="text-sm px-4 py-2 rounded-lg border border-white/10 hover:border-yellow-400/60 hover:bg-yellow-400/10 transition flex-shrink-0"
       >
         Scan
       </Link>
