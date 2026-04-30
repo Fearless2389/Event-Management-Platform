@@ -10,38 +10,17 @@ Open **PowerShell as Administrator** and run:
 choco install -y mongodb maven tomcat
 ```
 
-Or install manually:
+Note: `choco install tomcat` installs **Tomcat 9** (not 10). This project's JSP module is configured for Tomcat 9 (`javax.servlet` namespace) accordingly. If you ever switch to Tomcat 10, change the `javax.servlet*` dependencies in `jsp/pom.xml` to their `jakarta.servlet*` equivalents and update `jsp/src/main/webapp/WEB-INF/web.xml` to the Jakarta EE 6 schema.
 
-| Tool | Where | Notes |
+| Tool | Version | Where it lands |
 |---|---|---|
-| Node 20+ | https://nodejs.org | Already installed |
-| MongoDB 7 | https://www.mongodb.com/try/download/community | Pick "Windows MSI", install as a Windows service |
-| JDK 17+ | https://adoptium.net | We already have JDK 25 at `C:\Users\ruthv\.jdks\openjdk-25` |
-| Maven 3.9+ | https://maven.apache.org/download.cgi | Add `bin` to PATH |
-| Tomcat 10.1.x | https://tomcat.apache.org/download-10.cgi | Pick "32-bit/64-bit Windows Service Installer" or unzip the `.zip` to `C:\tomcat10` |
+| Node 20+ | https://nodejs.org | already installed |
+| MongoDB Community 7-8 | from choco | runs as Windows service `MongoDB`; bin at `C:\Program Files\MongoDB\Server\<v>\bin` |
+| JDK 11 | already installed | `C:\Users\ruthv\.jdk\jdk-11.0.28` |
+| Maven 3.9.x | from choco | `C:\ProgramData\chocolatey\lib\maven\apache-maven-3.9.15\bin` |
+| Tomcat 9.0.x | from choco | `C:\ProgramData\chocolatey\lib\tomcat\tools\apache-tomcat-9.0.117` (binaries) and `C:\ProgramData\Tomcat9` (admin-owned default `CATALINA_BASE`) |
 
-After installing, verify each:
-
-```bash
-node --version
-npm --version
-java -version
-mvn --version
-mongod --version
-```
-
-## 1. Set environment variables
-
-Add to your **user** environment variables (or set per-shell):
-
-```powershell
-setx JAVA_HOME "C:\Users\ruthv\.jdks\openjdk-25"
-setx CATALINA_HOME "C:\tomcat10"
-```
-
-Restart any open shells after `setx`.
-
-## 2. Razorpay test keys
+## 1. Razorpay test keys
 
 1. Sign up at https://razorpay.com (free, requires phone OTP).
 2. Skip the KYC steps — test mode works without KYC.
@@ -49,7 +28,7 @@ Restart any open shells after `setx`.
 4. Go to **Settings → API Keys → Generate Test Key**.
 5. Copy `Key Id` (starts with `rzp_test_`) and `Key Secret`.
 
-## 3. Create `.env`
+## 2. Create `backend/.env`
 
 ```bash
 cd backend
@@ -63,35 +42,28 @@ RAZORPAY_KEY_ID=rzp_test_xxxxxxxxxxxxxxxx
 RAZORPAY_KEY_SECRET=xxxxxxxxxxxxxxxxxxxxxxxxxxxx
 ```
 
-Leave `ETHEREAL_USER` and `ETHEREAL_PASS` blank — the backend will auto-create a fresh Ethereal inbox on first boot and print the credentials. Copy them back into `.env` if you want a stable inbox across restarts.
+Leave `ETHEREAL_USER` and `ETHEREAL_PASS` blank on first boot — the backend will auto-create a fresh Ethereal inbox and print the credentials in the console. Copy them back into `.env` if you want a stable inbox across restarts.
 
-## 4. Start MongoDB
+## 3. Verify MongoDB is running
 
-If installed as a Windows service, it should already be running. To check:
+The choco install registers MongoDB as a Windows service. Check from any shell:
 
 ```powershell
-Get-Service MongoDB
+sc.exe query MongoDB
 ```
 
-If it says `Stopped`, start it:
+If `STATE: RUNNING`, you're set. If `STOPPED`:
 
 ```powershell
 Start-Service MongoDB
 ```
 
-To run manually instead:
-
-```powershell
-mkdir C:\data\db
-mongod --dbpath C:\data\db
-```
-
-## 5. Start the backend
+## 4. Start the backend
 
 ```bash
 cd backend
 npm install        # only first time
-npm run dev
+npm run dev        # nodemon
 ```
 
 Should print:
@@ -101,48 +73,56 @@ Generated Ethereal test account: <user>@ethereal.email
 Backend listening on http://localhost:3001
 ```
 
-Test it: `curl http://localhost:3001/api/health` → `{"ok":true}`.
+Sanity check: `curl http://localhost:3001/api/health` → `{"ok":true}`.
 
-## 6. Start the frontend
+## 5. Start the frontend
 
 In a new terminal:
 
 ```bash
 cd frontend
 npm install        # only first time
-npm run dev
+npm run dev        # Vite on :5173
 ```
 
 Visit http://localhost:5173.
 
-## 7. Build and deploy the JSP webapp
+## 6. Build and deploy the JSP webapp
 
-In a new terminal:
+The chocolatey Tomcat package places its writable `CATALINA_BASE` at `C:\ProgramData\Tomcat9`, which only Administrators can write to. To avoid needing admin every time, this project uses a **project-local `CATALINA_BASE`** at `tomcat-base/` inside the repo. The folder was seeded once by copying `conf/` from the system install and creating empty `logs/`, `temp/`, `webapps/`, `work/`.
+
+If you cloned this repo fresh and `tomcat-base/` is missing, recreate it:
+
+```bash
+mkdir -p tomcat-base
+cp -r "/c/ProgramData/Tomcat9/conf" tomcat-base/
+mkdir -p tomcat-base/{logs,temp,webapps,work}
+```
+
+Build and deploy:
 
 ```bash
 cd jsp
-mvn clean package
+JAVA_HOME="C:/Users/ruthv/.jdk/jdk-11.0.28" \
+  "/c/ProgramData/chocolatey/lib/maven/apache-maven-3.9.15/bin/mvn.cmd" clean package
+
+cp target/event-mgmt.war ../tomcat-base/webapps/
 ```
 
-Look for `target/event-mgmt.war`.
+Start Tomcat in a new terminal (foreground — Ctrl+C to stop):
 
-Copy the war to Tomcat's `webapps/` folder:
-
-```powershell
-copy target\event-mgmt.war "C:\tomcat10\webapps\"
+```bash
+JAVA_HOME="C:/Users/ruthv/.jdk/jdk-11.0.28" \
+CATALINA_HOME="C:/ProgramData/chocolatey/lib/tomcat/tools/apache-tomcat-9.0.117" \
+CATALINA_BASE="$(pwd)/tomcat-base" \
+  "$CATALINA_HOME/bin/catalina.bat" run
 ```
 
-Start Tomcat:
+Or use the helper script `tomcat-base/start-tomcat.bat` (double-click in Explorer).
 
-```powershell
-C:\tomcat10\bin\startup.bat
-```
+Sanity check: `curl http://localhost:8080/event-mgmt/ticket.jsp` → HTTP 400 with `Missing ticket id.` That's correct — it means the page is alive and responding to requests.
 
-Tomcat unpacks the war on first hit. Visit http://localhost:8080/event-mgmt/ticket.jsp — you should see "Missing ticket id." (that's correct; it means the page is alive).
-
-To redeploy after JSP changes: stop Tomcat (`shutdown.bat`), delete `webapps\event-mgmt\` and `webapps\event-mgmt.war`, copy the new war, start Tomcat again.
-
-## 8. Run the demo
+## 7. Run the demo
 
 See [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
 
@@ -150,14 +130,16 @@ See [DEMO_SCRIPT.md](DEMO_SCRIPT.md).
 
 ## Troubleshooting
 
-**Backend exits with "Razorpay keys missing":** check `.env` is in `backend/` (not the project root).
+**Backend exits with "Razorpay keys missing":** check `.env` is in `backend/` (not the project root) and has both `RAZORPAY_KEY_ID` and `RAZORPAY_KEY_SECRET` set.
 
-**Frontend shows "Failed to fetch" on every page:** backend isn't running on port 3001, or CORS is blocking. Vite proxies `/api/*` to `http://localhost:3001` automatically.
+**Frontend shows "Failed to fetch" on every page:** backend isn't running on port 3001. Vite proxies `/api/*` to `http://localhost:3001` automatically.
 
-**JSP page returns 404:** Tomcat hasn't unpacked the war yet, or the context path is wrong. The path is `/event-mgmt/ticket.jsp` (matches the war filename).
+**JSP page returns 404:** Tomcat hasn't unpacked the war yet, or you copied the war to the wrong place. The deployed path is `tomcat-base/webapps/event-mgmt.war` and the URL is `http://localhost:8080/event-mgmt/ticket.jsp` (path matches the war filename).
 
-**JSP page returns 500 with "ClassNotFoundException com.eventmgmt.TicketDAO":** the war wasn't built with the Java sources. Run `mvn clean package` again and check `target/event-mgmt.war` includes `WEB-INF/classes/com/eventmgmt/TicketDAO.class`.
+**JSP page returns 500 with `ClassNotFoundException com.eventmgmt.TicketDAO`:** the war wasn't built with the Java sources. Run `mvn clean package` again from `jsp/` and check `target/event-mgmt.war` is non-empty.
 
-**MongoDB connection refused (Java side):** the JSP module reads its own connection from `WEB-INF/web.xml` (`mongoUri` context-param). Default is `mongodb://localhost:27017`. Change it there if your Mongo is elsewhere, then rebuild the war.
+**Tomcat startup fails with "address already in use":** another process is on :8080. Find it with `netstat -ano | findstr :8080` then `taskkill /PID <pid> /F`. Or change Tomcat's port in `tomcat-base/conf/server.xml`.
+
+**MongoDB connection refused (Java side):** the JSP module reads its own connection from `WEB-INF/web.xml` (`mongoUri` context-param). Default is `mongodb://localhost:27017`. If you change Mongo's port, edit web.xml and rebuild the war.
 
 **Webcam scanner says "no camera":** browsers block camera access on non-HTTPS unless the host is `localhost`. Make sure you visit via `http://localhost:5173`, not `http://127.0.0.1:5173` or your LAN IP.
