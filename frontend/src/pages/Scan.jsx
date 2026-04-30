@@ -8,58 +8,81 @@ const REGION_ID = 'qr-region'
 export default function Scan() {
   const { eventId } = useParams()
   const scannerRef = useRef(null)
-  const busyRef = useRef(false)
+  const lockedRef = useRef(false)
   const [mode, setMode] = useState('camera')
   const [pasted, setPasted] = useState('')
-  const [status, setStatus] = useState(null)
+  const [result, setResult] = useState(null)
   const [error, setError] = useState(null)
+  const [scannerKey, setScannerKey] = useState(0)
 
   useEffect(() => {
-    if (mode !== 'camera') return
+    if (mode !== 'camera' || result) return
     let cancelled = false
-    const scanner = new Html5Qrcode(REGION_ID, { verbose: false })
-    scannerRef.current = scanner
+    let scanner
 
-    Html5Qrcode.getCameras()
-      .then((cams) => {
-        if (cancelled || cams.length === 0) {
-          if (cams.length === 0) setError('No webcam detected. Use paste mode.')
+    const start = async () => {
+      try {
+        scanner = new Html5Qrcode(REGION_ID, { verbose: false })
+        scannerRef.current = scanner
+        const cams = await Html5Qrcode.getCameras()
+        if (cancelled) return
+        if (!cams || cams.length === 0) {
+          setError('No webcam detected. Switch to Paste mode.')
           return
         }
-        return scanner.start(
+        await scanner.start(
           { facingMode: 'environment' },
           { fps: 10, qrbox: 250 },
           handleDecode,
           () => {},
         )
-      })
-      .catch((e) => setError(e.message || 'Failed to start scanner'))
+      } catch (e) {
+        if (!cancelled) setError(e.message || 'Failed to start scanner')
+      }
+    }
+
+    start()
 
     return () => {
       cancelled = true
-      if (scanner.isScanning) scanner.stop().catch(() => {}).finally(() => scanner.clear())
-      else scanner.clear()
+      if (scanner && scanner.isScanning) {
+        scanner.stop().catch(() => {}).finally(() => scanner.clear())
+      } else if (scanner) {
+        scanner.clear()
+      }
     }
-  }, [mode])
+  }, [mode, scannerKey, result])
+
+  async function stopScanner() {
+    const scanner = scannerRef.current
+    if (scanner && scanner.isScanning) {
+      try {
+        await scanner.stop()
+      } catch {}
+    }
+  }
 
   async function handleDecode(text) {
-    if (busyRef.current) return
-    busyRef.current = true
-    setStatus('checking')
+    if (lockedRef.current) return
+    lockedRef.current = true
+    await stopScanner()
     setError(null)
     try {
-      const res = await api.checkin(text, eventId)
-      setStatus('ok')
-      window.open(res.jspCheckinUrl, '_blank')
+      const res = await api.checkin(text.trim(), eventId)
+      setResult({ kind: 'ok', ...res })
     } catch (e) {
-      setError(e.message)
-      setStatus(null)
-    } finally {
-      setTimeout(() => {
-        busyRef.current = false
-        setStatus(null)
-      }, 2000)
+      const message = e.message || 'Check-in failed'
+      const alreadyChecked = /already checked in/i.test(message)
+      setResult({ kind: alreadyChecked ? 'already' : 'error', message })
     }
+  }
+
+  function scanAnother() {
+    lockedRef.current = false
+    setResult(null)
+    setError(null)
+    setPasted('')
+    setScannerKey((k) => k + 1)
   }
 
   async function submitPasted(e) {
@@ -72,23 +95,27 @@ export default function Scan() {
     <div className="max-w-xl mx-auto">
       <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold">Scan tickets</h1>
-        <div className="join">
-          <button
-            className={`btn btn-sm join-item ${mode === 'camera' ? 'btn-primary' : ''}`}
-            onClick={() => setMode('camera')}
-          >
-            Camera
-          </button>
-          <button
-            className={`btn btn-sm join-item ${mode === 'paste' ? 'btn-primary' : ''}`}
-            onClick={() => setMode('paste')}
-          >
-            Paste code
-          </button>
-        </div>
+        {!result && (
+          <div className="join">
+            <button
+              className={`btn btn-sm join-item ${mode === 'camera' ? 'btn-primary' : ''}`}
+              onClick={() => setMode('camera')}
+            >
+              Camera
+            </button>
+            <button
+              className={`btn btn-sm join-item ${mode === 'paste' ? 'btn-primary' : ''}`}
+              onClick={() => setMode('paste')}
+            >
+              Paste code
+            </button>
+          </div>
+        )}
       </div>
 
-      {mode === 'camera' ? (
+      {result ? (
+        <ResultCard result={result} onScanAnother={scanAnother} />
+      ) : mode === 'camera' ? (
         <div className="card bg-base-100 shadow">
           <div className="card-body items-center">
             <div id={REGION_ID} className="w-full max-w-sm" />
@@ -116,15 +143,57 @@ export default function Scan() {
         </form>
       )}
 
-      {status === 'checking' && (
-        <div className="alert alert-info mt-4">Verifying ticket…</div>
-      )}
-      {status === 'ok' && (
-        <div className="alert alert-success mt-4">
-          ✓ Checked in. Confirmation page opened.
-        </div>
-      )}
       {error && <div className="alert alert-error mt-4">{error}</div>}
+    </div>
+  )
+}
+
+function ResultCard({ result, onScanAnother }) {
+  const tone =
+    result.kind === 'ok' ? 'border-success' : result.kind === 'already' ? 'border-warning' : 'border-error'
+  const icon = result.kind === 'ok' ? '✅' : result.kind === 'already' ? '⚠️' : '❌'
+  const title =
+    result.kind === 'ok' ? 'Check-in successful' : result.kind === 'already' ? 'Already checked in' : 'Check-in failed'
+
+  return (
+    <div className={`card bg-base-100 shadow border-t-4 ${tone}`}>
+      <div className="card-body items-center text-center">
+        <div className="text-5xl">{icon}</div>
+        <h2 className="card-title">{title}</h2>
+
+        {result.kind === 'ok' && (
+          <>
+            <p className="text-base">
+              <strong>{result.attendeeName}</strong> · {result.tierName}
+            </p>
+            <p className="text-xs opacity-60">Checked in at {new Date().toLocaleString()}</p>
+          </>
+        )}
+
+        {result.kind === 'already' && (
+          <p className="text-sm opacity-70">{result.message}</p>
+        )}
+
+        {result.kind === 'error' && (
+          <p className="text-sm opacity-70">{result.message}</p>
+        )}
+
+        <div className="card-actions w-full flex-col gap-2 mt-4">
+          {result.jspCheckinUrl && (
+            <a
+              href={result.jspCheckinUrl}
+              target="_blank"
+              rel="noreferrer"
+              className="btn btn-outline btn-sm w-full"
+            >
+              Open JSP confirmation page
+            </a>
+          )}
+          <button onClick={onScanAnother} className="btn btn-primary w-full">
+            Scan another
+          </button>
+        </div>
+      </div>
     </div>
   )
 }

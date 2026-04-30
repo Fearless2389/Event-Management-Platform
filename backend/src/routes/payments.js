@@ -1,4 +1,5 @@
 import express from 'express'
+import mongoose from 'mongoose'
 import { Event } from '../models/Event.js'
 import { Ticket } from '../models/Ticket.js'
 import { getRazorpay, verifySignature } from '../services/razorpay.js'
@@ -25,7 +26,7 @@ router.post('/order', async (req, res, next) => {
     const order = await rzp.orders.create({
       amount: tier.price * 100,
       currency: 'INR',
-      receipt: `ev_${ev._id}_${Date.now()}`,
+      receipt: `rcpt_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
       notes: { eventId: String(ev._id), tierName, attendeeEmail },
     })
 
@@ -78,7 +79,9 @@ router.post('/verify', async (req, res, next) => {
       return res.status(409).json({ error: 'Tier sold out' })
     }
 
+    const ticketId = new mongoose.Types.ObjectId()
     const ticket = await Ticket.create({
+      _id: ticketId,
       eventId: ev._id,
       attendeeName,
       attendeeEmail,
@@ -86,10 +89,8 @@ router.post('/verify', async (req, res, next) => {
       price: tier.price,
       razorpayOrderId: razorpay_order_id,
       razorpayPaymentId: razorpay_payment_id,
-      qrPayload: '', // set below to ticket._id
+      qrPayload: String(ticketId),
     })
-    ticket.qrPayload = String(ticket._id)
-    await ticket.save()
 
     tier.sold += 1
     await ev.save()
