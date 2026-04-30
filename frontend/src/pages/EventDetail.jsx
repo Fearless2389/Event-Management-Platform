@@ -3,6 +3,7 @@ import { Link, useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import { getUser } from '../lib/auth'
+import { getEventImage } from '../lib/eventImage'
 
 export default function EventDetail() {
   const { id } = useParams()
@@ -45,15 +46,11 @@ export default function EventDetail() {
 
       <div className="relative overflow-hidden rounded-3xl">
         <div className="aspect-[16/8] sm:aspect-[16/6] relative">
-          {event.imageUrl ? (
-            <img
-              src={event.imageUrl}
-              alt={event.title}
-              className="absolute inset-0 w-full h-full object-cover"
-            />
-          ) : (
-            <div className="absolute inset-0 brand-gradient" />
-          )}
+          <img
+            src={getEventImage(event, 'hero')}
+            alt={event.title}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 text-white">
             {event.category && event.category !== 'Other' && (

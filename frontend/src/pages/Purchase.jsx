@@ -3,6 +3,7 @@ import { useNavigate, useParams } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
 import { getUser } from '../lib/auth'
+import { getEventImage } from '../lib/eventImage'
 
 const RAZORPAY_SCRIPT_URL = 'https://checkout.razorpay.com/v1/checkout.js'
 
@@ -110,17 +111,11 @@ export default function Purchase() {
 
           <div className="flex gap-3 items-center">
             <div className="w-20 h-20 rounded-xl overflow-hidden flex-shrink-0">
-              {event.imageUrl ? (
-                <img
-                  src={event.imageUrl}
-                  alt={event.title}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <div className="brand-gradient w-full h-full flex items-center justify-center text-white text-xs font-semibold p-1 text-center leading-tight">
-                  {event.title.slice(0, 14)}
-                </div>
-              )}
+              <img
+                src={getEventImage(event, 'thumb')}
+                alt={event.title}
+                className="w-full h-full object-cover"
+              />
             </div>
             <div className="min-w-0">
               <div className="font-semibold truncate">{event.title}</div>

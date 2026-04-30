@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import toast from 'react-hot-toast'
 import { api } from '../lib/api'
+import { getEventImage } from '../lib/eventImage'
 
 const CATEGORIES = ['Music', 'Tech', 'Comedy', 'Sports', 'Theatre', 'Other']
 const empty = () => ({ name: '', price: '', capacity: '' })
@@ -209,20 +210,14 @@ export default function CreateEvent() {
           <div className="text-xs uppercase tracking-wider opacity-60">Live preview</div>
           <div className="surface rounded-2xl overflow-hidden card-hover">
             <div className="aspect-[3/4] relative">
-              {form.imageUrl ? (
-                <img
-                  src={form.imageUrl}
-                  alt="preview"
-                  className="absolute inset-0 w-full h-full object-cover"
-                  onError={(e) => (e.currentTarget.style.display = 'none')}
-                />
-              ) : (
-                <div className="absolute inset-0 brand-gradient flex items-center justify-center p-4">
-                  <span className="text-white font-bold text-center text-lg leading-tight">
-                    {form.title || 'Your event title'}
-                  </span>
-                </div>
-              )}
+              <img
+                src={getEventImage(
+                  { imageUrl: form.imageUrl, category: form.category, title: form.title },
+                  'card',
+                )}
+                alt="preview"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
               {form.category && form.category !== 'Other' && (
                 <span className="absolute top-3 left-3 backdrop-blur bg-black/40 text-white text-[11px] font-semibold px-2.5 py-1 rounded-full border border-white/10">

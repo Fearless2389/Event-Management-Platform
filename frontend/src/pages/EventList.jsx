@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
+import { getEventImage } from '../lib/eventImage'
 
 const CATEGORIES = ['All', 'Music', 'Tech', 'Comedy', 'Sports', 'Theatre', 'Other']
 
@@ -46,15 +47,11 @@ export default function EventList() {
         className="block relative overflow-hidden rounded-3xl card-hover group"
       >
         <div className="aspect-[16/6] sm:aspect-[16/5] relative">
-          {featured.imageUrl ? (
-            <img
-              src={featured.imageUrl}
-              alt={featured.title}
-              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            />
-          ) : (
-            <div className="absolute inset-0 brand-gradient" />
-          )}
+          <img
+            src={getEventImage(featured, 'hero')}
+            alt={featured.title}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+          />
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 text-white">
             <div className="text-xs uppercase tracking-[0.2em] font-semibold opacity-80 mb-2 flex items-center gap-2">
@@ -133,19 +130,11 @@ function EventCard({ event }) {
       className="card-hover block relative overflow-hidden rounded-2xl surface group"
     >
       <div className="aspect-[3/4] relative">
-        {event.imageUrl ? (
-          <img
-            src={event.imageUrl}
-            alt={event.title}
-            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="absolute inset-0 brand-gradient flex items-center justify-center p-4">
-            <span className="text-white font-bold text-center text-lg leading-tight">
-              {event.title}
-            </span>
-          </div>
-        )}
+        <img
+          src={getEventImage(event, 'card')}
+          alt={event.title}
+          className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
         <div className="absolute inset-0 bg-gradient-to-t from-black via-black/30 to-transparent" />
 
         {event.category && event.category !== 'Other' && (

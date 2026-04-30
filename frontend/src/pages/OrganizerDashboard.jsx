@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '../lib/api'
+import { getEventImage } from '../lib/eventImage'
 
 export default function OrganizerDashboard() {
   const [events, setEvents] = useState([])
@@ -95,13 +96,11 @@ function EventRow({ event }) {
   return (
     <div className="surface rounded-2xl p-4 flex items-center gap-4 card-hover">
       <div className="w-16 h-16 rounded-xl overflow-hidden flex-shrink-0">
-        {event.imageUrl ? (
-          <img src={event.imageUrl} alt={event.title} className="w-full h-full object-cover" />
-        ) : (
-          <div className="brand-gradient w-full h-full flex items-center justify-center text-white text-[10px] font-semibold p-1 text-center leading-tight">
-            {event.title.slice(0, 12)}
-          </div>
-        )}
+        <img
+          src={getEventImage(event, 'thumb')}
+          alt={event.title}
+          className="w-full h-full object-cover"
+        />
       </div>
 
       <div className="flex-1 min-w-0">
