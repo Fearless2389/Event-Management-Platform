@@ -55,7 +55,7 @@ export default function EventList() {
           <div className="absolute inset-0 bg-gradient-to-t from-black via-black/50 to-transparent" />
           <div className="absolute inset-x-0 bottom-0 p-6 sm:p-10 text-white">
             <div className="text-xs uppercase tracking-[0.2em] font-semibold opacity-80 mb-2 flex items-center gap-2">
-              <span className="w-1.5 h-1.5 bg-pink-400 rounded-full animate-pulse" />
+              <span className="w-1.5 h-1.5 bg-yellow-400 rounded-full animate-pulse" />
               Featured event
             </div>
             <h1 className="text-3xl sm:text-5xl font-extrabold mb-2 max-w-3xl leading-tight">

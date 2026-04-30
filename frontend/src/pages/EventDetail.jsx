@@ -156,7 +156,7 @@ function TierTile({ tier, onBuy }) {
       className={`relative rounded-2xl border-2 p-4 transition ${
         soldOut
           ? 'border-white/5 bg-base-200 opacity-50'
-          : 'border-white/10 surface surface-hover'
+          : 'border-white/10 surface surface-hover hover:border-yellow-400/60'
       }`}
     >
       <div className="flex items-start justify-between gap-3 mb-3">

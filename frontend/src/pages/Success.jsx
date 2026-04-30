@@ -13,10 +13,10 @@ export default function Success() {
           <div className="absolute inset-0 brand-gradient rounded-full animate-pop-in" />
           <svg
             viewBox="0 0 52 52"
-            className="relative w-12 h-12 text-white"
+            className="relative w-12 h-12 text-black"
             fill="none"
             stroke="currentColor"
-            strokeWidth="5"
+            strokeWidth="6"
             strokeLinecap="round"
             strokeLinejoin="round"
           >

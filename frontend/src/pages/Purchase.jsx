@@ -51,7 +51,7 @@ export default function Purchase() {
         name: event?.title || 'Event ticket',
         description: `${decodedTier} ticket`,
         prefill: { name: user.name, email: user.email },
-        theme: { color: '#a855f7' },
+        theme: { color: '#facc15' },
         handler: async (response) => {
           try {
             setStatus('verifying')
