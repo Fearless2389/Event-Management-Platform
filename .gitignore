@@ -10,19 +10,11 @@ yarn-error.log*
 frontend/dist/
 frontend/.vite/
 
-# Java / Maven
-jsp/target/
-*.class
-*.war
-*.jar
+# IDE / OS
 .idea/
 *.iml
-
-# OS
 .DS_Store
 Thumbs.db
-
-# Editors
 .vscode/
 *.swp
 *.swo
@@ -31,9 +23,5 @@ Thumbs.db
 data/
 *.bson
 
-# Tomcat runtime (project-local CATALINA_BASE — log files, deployed wars, work dir)
-tomcat-base/logs/
-tomcat-base/temp/
-tomcat-base/work/
-tomcat-base/webapps/*.war
-tomcat-base/webapps/event-mgmt/
+# Leftover Tomcat runtime logs from the removed JSP layer
+tomcat-base/
