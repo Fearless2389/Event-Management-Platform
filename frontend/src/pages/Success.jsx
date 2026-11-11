@@ -2,9 +2,8 @@ import { Link, useSearchParams } from 'react-router-dom'
 
 export default function Success() {
   const [params] = useSearchParams()
-  const ticketId = params.get('ticketId')
-  const jspUrl = params.get('jspUrl')
-  const emailUrl = params.get('emailUrl')
+  const ticketIds = params.getAll('id')
+  const emailSent = params.get('email') !== '0'
 
   return (
     <div className="max-w-md mx-auto surface rounded-2xl p-8 space-y-5 text-center">
@@ -35,42 +34,50 @@ export default function Success() {
       <div>
         <h1 className="text-2xl font-extrabold">Payment successful</h1>
         <p className="text-sm opacity-60 mt-1">
-          Your ticket is confirmed. We've also emailed it to you.
+          {ticketIds.length === 1
+            ? 'Your ticket is confirmed.'
+            : `All ${ticketIds.length} tickets are confirmed.`}{' '}
+          {emailSent
+            ? 'Check your inbox for the email confirmation.'
+            : 'Save the links below — we could not send the email.'}
         </p>
       </div>
 
-      <div className="bg-base-100/50 border border-white/5 rounded-xl p-3 text-xs opacity-70">
-        Ticket ID: <code className="text-xs">{ticketId}</code>
-      </div>
+      {!emailSent && (
+        <div className="alert alert-warning text-sm text-left">
+          <span>
+            We couldn't send the confirmation email. Your tickets are valid — open each
+            one below and either print it or bookmark the link.
+          </span>
+        </div>
+      )}
 
-      <div className="space-y-2">
-        {jspUrl && (
-          <a
-            href={jspUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="gradient-cta block w-full py-3 rounded-xl font-semibold"
-          >
-            🎟️  Open printable ticket
-          </a>
-        )}
-        {emailUrl && (
-          <a
-            href={emailUrl}
-            target="_blank"
-            rel="noreferrer"
-            className="block w-full py-3 rounded-xl font-medium border border-white/10 hover:border-white/30 hover:bg-white/5 transition"
-          >
-            📧  View confirmation email
-          </a>
-        )}
-        <Link
-          to="/"
-          className="block w-full py-2 text-sm opacity-70 hover:opacity-100 transition"
-        >
-          ← Back to events
-        </Link>
-      </div>
+      {ticketIds.length === 0 ? (
+        <div className="alert alert-warning text-sm">
+          We couldn't find any ticket IDs in this link.
+        </div>
+      ) : (
+        <div className="space-y-2 text-left">
+          {ticketIds.map((tid, i) => (
+            <a
+              key={tid}
+              href={`/ticket/${tid}`}
+              target="_blank"
+              rel="noreferrer"
+              className="gradient-cta block w-full py-3 px-4 rounded-xl font-semibold text-center"
+            >
+              🎟️ Open ticket {ticketIds.length > 1 ? i + 1 : ''}
+            </a>
+          ))}
+        </div>
+      )}
+
+      <Link
+        to="/"
+        className="block w-full py-2 text-sm opacity-70 hover:opacity-100 transition"
+      >
+        ← Back to events
+      </Link>
 
       <style>{`
         @keyframes check-draw {

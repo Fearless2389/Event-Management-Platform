@@ -1,61 +1,89 @@
-import nodemailer from 'nodemailer'
+import { Resend } from 'resend'
 
-let transporter = null
+let resend = null
 
 export async function initEmail() {
-  let user = process.env.ETHEREAL_USER
-  let pass = process.env.ETHEREAL_PASS
-
-  if (!user || !pass) {
-    const test = await nodemailer.createTestAccount()
-    user = test.user
-    pass = test.pass
-    console.log('Generated Ethereal test account:', user)
-    console.log('Pin these in .env to keep the same inbox between restarts:')
-    console.log(`  ETHEREAL_USER=${user}`)
-    console.log(`  ETHEREAL_PASS=${pass}`)
+  const key = process.env.RESEND_API_KEY
+  if (!key) {
+    console.warn(
+      '[email] RESEND_API_KEY not set — ticket emails will be skipped. ' +
+        'Sign up at https://resend.com (free tier, no card) and set RESEND_API_KEY in your env.',
+    )
+    resend = null
+    return
   }
-
-  transporter = nodemailer.createTransport({
-    host: 'smtp.ethereal.email',
-    port: 587,
-    secure: false,
-    auth: { user, pass },
-  })
+  resend = new Resend(key)
 }
 
-export async function sendTicketEmail({ to, attendeeName, event, tierName, price, ticketId, qrPng, jspTicketUrl }) {
-  if (!transporter) throw new Error('Email transporter not initialised')
+export async function sendTicketEmail({ to, attendeeName, event, tierName, price, tickets }) {
+  if (!resend) {
+    console.warn('[email] Skipping send — Resend not initialised.')
+    return { messageId: null, previewUrl: null }
+  }
 
-  const html = `
-    <div style="font-family: system-ui, sans-serif; max-width: 480px; margin: auto; padding: 24px; border: 1px solid #ddd; border-radius: 8px;">
-      <h2 style="margin: 0 0 8px;">🎟️ Your ticket for ${escapeHtml(event.title)}</h2>
-      <p style="margin: 0 0 16px; color: #555;">${new Date(event.dateTime).toLocaleString()} · ${escapeHtml(event.venue)}</p>
-      <p>Hi ${escapeHtml(attendeeName)}, your <strong>${escapeHtml(tierName)}</strong> ticket (₹${price}) is confirmed.</p>
-      <div style="text-align: center; margin: 16px 0;">
-        <img src="cid:ticket-qr" alt="QR" style="width: 200px; height: 200px;" />
-      </div>
-      <p style="font-size: 12px; color: #777; text-align: center;">Ticket ID: ${ticketId}</p>
-      <p style="text-align: center;">
-        <a href="${jspTicketUrl}" style="display: inline-block; background: #570df8; color: #fff; text-decoration: none; padding: 8px 16px; border-radius: 4px;">
+  const from = process.env.EMAIL_FROM || 'EventHub <onboarding@resend.dev>'
+  const safeTickets = Array.isArray(tickets) ? tickets : []
+  const total = price * safeTickets.length
+  const when = new Date(event.dateTime).toLocaleString()
+
+  const ticketsHtml = safeTickets
+    .map(
+      (t, i) => `
+      <div style="border-top: 1px dashed #ddd; padding: 16px 0; text-align: center;">
+        <div style="font-size: 12px; color: #888; margin-bottom: 8px;">
+          Ticket ${i + 1} of ${safeTickets.length}
+        </div>
+        <img src="cid:${cidFor(t.ticketId)}" alt="QR" style="width: 200px; height: 200px;" />
+        <div style="font-size: 11px; color: #888; margin-top: 6px;">ID: ${t.ticketId}</div>
+        <a href="${t.printUrl}"
+           style="display: inline-block; margin-top: 10px; background: #facc15; color: #1a1a1a;
+                  text-decoration: none; padding: 8px 14px; border-radius: 6px; font-weight: 600;">
           Open printable ticket
         </a>
+      </div>
+    `,
+    )
+    .join('')
+
+  const html = `
+    <div style="font-family: system-ui, -apple-system, sans-serif; max-width: 520px; margin: auto; padding: 24px; border: 1px solid #e5e5e5; border-radius: 12px; color: #111;">
+      <h2 style="margin: 0 0 6px;">🎟️ Your tickets for ${escapeHtml(event.title)}</h2>
+      <p style="margin: 0 0 16px; color: #555; font-size: 14px;">${escapeHtml(when)} · ${escapeHtml(event.venue)}</p>
+      <p style="font-size: 14px;">
+        Hi ${escapeHtml(attendeeName)}, your <strong>${escapeHtml(tierName)}</strong> ticket${safeTickets.length === 1 ? '' : 's'}
+        ${safeTickets.length === 1 ? '' : `(× ${safeTickets.length})`}
+        ${safeTickets.length === 1 ? 'is' : 'are'} confirmed. Total ₹${total}.
+      </p>
+      ${ticketsHtml}
+      <p style="font-size: 12px; color: #777; margin-top: 20px;">
+        Show the QR code at the entrance. The organiser will scan to check you in.
       </p>
     </div>
   `
 
-  const info = await transporter.sendMail({
-    from: '"EventHub" <noreply@eventhub.test>',
-    to,
-    subject: `Your ticket for ${event.title}`,
-    html,
-    attachments: [
-      { filename: 'ticket-qr.png', content: qrPng, cid: 'ticket-qr' },
-    ],
-  })
+  const attachments = safeTickets.map((t) => ({
+    filename: `ticket-${t.ticketId}.png`,
+    content: t.qrPng.toString('base64'),
+    contentId: cidFor(t.ticketId),
+  }))
 
-  const previewUrl = nodemailer.getTestMessageUrl(info) || null
-  return { messageId: info.messageId, previewUrl }
+  try {
+    const { data, error } = await resend.emails.send({
+      from,
+      to,
+      subject: `Your ${safeTickets.length === 1 ? 'ticket' : `${safeTickets.length} tickets`} for ${event.title}`,
+      html,
+      attachments,
+    })
+    if (error) throw new Error(error.message || 'Resend rejected the email')
+    return { messageId: data?.id || null, previewUrl: null }
+  } catch (e) {
+    throw new Error(e.message || 'Email send failed')
+  }
+}
+
+function cidFor(ticketId) {
+  return `qr-${ticketId}`
 }
 
 function escapeHtml(s) {

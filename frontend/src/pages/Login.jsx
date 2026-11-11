@@ -1,19 +1,28 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
-import { setUser } from '../lib/auth'
+import { Link, useNavigate } from 'react-router-dom'
+import toast from 'react-hot-toast'
+import { api } from '../lib/api'
+import { setSession } from '../lib/auth'
 
 export default function Login() {
   const [email, setEmail] = useState('')
-  const [name, setName] = useState('')
-  const [role, setRole] = useState('attendee')
+  const [password, setPassword] = useState('')
+  const [submitting, setSubmitting] = useState(false)
   const nav = useNavigate()
 
-  function submit(e) {
+  async function submit(e) {
     e.preventDefault()
-    if (!email || !name) return
-    setUser({ email: email.trim().toLowerCase(), name: name.trim(), role })
-    nav(role === 'organizer' ? '/dashboard' : '/')
-    window.location.reload()
+    if (!email || !password) return
+    setSubmitting(true)
+    try {
+      const { token, user } = await api.login({ email: email.trim().toLowerCase(), password })
+      setSession({ token, user })
+      nav(user.role === 'organizer' ? '/dashboard' : '/')
+      window.location.reload()
+    } catch (err) {
+      toast.error(err.message)
+      setSubmitting(false)
+    }
   }
 
   return (
@@ -49,21 +58,17 @@ export default function Login() {
       </aside>
 
       <div className="lg:col-span-2 flex items-center">
-        <form
-          onSubmit={submit}
-          className="w-full surface rounded-2xl p-7 space-y-5"
-        >
+        <form onSubmit={submit} className="w-full surface rounded-2xl p-7 space-y-5">
           <div>
-            <h1 className="text-2xl font-bold">Sign in</h1>
-            <p className="text-sm opacity-60 mt-1">
-              MVP demo login — pick a role to explore both flows.
-            </p>
+            <h1 className="text-2xl font-bold">Welcome back</h1>
+            <p className="text-sm opacity-60 mt-1">Sign in to buy tickets or manage events.</p>
           </div>
 
           <Field label="Email">
             <input
               type="email"
               required
+              autoComplete="email"
               className="input input-bordered w-full"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
@@ -71,38 +76,32 @@ export default function Login() {
             />
           </Field>
 
-          <Field label="Name">
+          <Field label="Password">
             <input
-              type="text"
+              type="password"
               required
+              autoComplete="current-password"
               className="input input-bordered w-full"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Alice"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
             />
           </Field>
 
-          <div>
-            <span className="text-sm font-medium block mb-2">I'm signing in as</span>
-            <div className="grid grid-cols-2 gap-2">
-              <RoleOption
-                label="Attendee"
-                desc="Buy & scan tickets"
-                checked={role === 'attendee'}
-                onSelect={() => setRole('attendee')}
-              />
-              <RoleOption
-                label="Organizer"
-                desc="Create & manage events"
-                checked={role === 'organizer'}
-                onSelect={() => setRole('organizer')}
-              />
-            </div>
-          </div>
-
-          <button type="submit" className="gradient-cta w-full py-3 rounded-xl font-semibold">
-            Continue →
+          <button
+            type="submit"
+            disabled={submitting}
+            className="gradient-cta w-full py-3 rounded-xl font-semibold"
+          >
+            {submitting ? 'Signing in…' : 'Sign in →'}
           </button>
+
+          <p className="text-sm text-center opacity-70">
+            New here?{' '}
+            <Link to="/signup" className="font-semibold brand-gradient-text hover:underline">
+              Create an account
+            </Link>
+          </p>
         </form>
       </div>
     </div>
@@ -124,22 +123,5 @@ function Field({ label, children }) {
       <span className="text-sm font-medium block mb-1.5">{label}</span>
       {children}
     </label>
-  )
-}
-
-function RoleOption({ label, desc, checked, onSelect }) {
-  return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={`text-left p-3 rounded-xl border-2 transition ${
-        checked
-          ? 'border-yellow-400 bg-yellow-400/10'
-          : 'border-white/10 hover:border-white/30'
-      }`}
-    >
-      <div className="font-semibold text-sm">{label}</div>
-      <div className="text-xs opacity-60 mt-0.5">{desc}</div>
-    </button>
   )
 }

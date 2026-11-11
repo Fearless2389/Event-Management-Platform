@@ -1,7 +1,6 @@
-// MVP-only auth: email + name in localStorage. Not production.
-const KEY = 'em_user'
+const KEY = 'em_session'
 
-export function getUser() {
+export function getSession() {
   try {
     const raw = localStorage.getItem(KEY)
     return raw ? JSON.parse(raw) : null
@@ -10,8 +9,18 @@ export function getUser() {
   }
 }
 
-export function setUser(user) {
-  localStorage.setItem(KEY, JSON.stringify(user))
+export function getUser() {
+  const s = getSession()
+  return s?.user || null
+}
+
+export function getToken() {
+  const s = getSession()
+  return s?.token || null
+}
+
+export function setSession({ token, user }) {
+  localStorage.setItem(KEY, JSON.stringify({ token, user }))
 }
 
 export function logout() {

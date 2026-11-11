@@ -9,11 +9,14 @@ const TicketSchema = new mongoose.Schema(
     price: { type: Number, required: true },
     razorpayOrderId: { type: String, required: true },
     razorpayPaymentId: { type: String, required: true },
+    ticketIndex: { type: Number, required: true, default: 0 },
     qrPayload: { type: String, required: true, index: true },
     checkedIn: { type: Boolean, default: false },
     checkedInAt: { type: Date, default: null },
   },
   { timestamps: true },
 )
+
+TicketSchema.index({ razorpayPaymentId: 1, ticketIndex: 1 }, { unique: true })
 
 export const Ticket = mongoose.model('Ticket', TicketSchema)

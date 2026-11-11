@@ -76,7 +76,7 @@ export default function Layout() {
 
       <footer className="text-center text-xs opacity-50 py-8 px-4">
         <div className="max-w-6xl mx-auto border-t border-white/5 pt-6">
-          EventHub · Test mode build · Razorpay test · Ethereal email
+          EventHub · Razorpay test mode · Powered by Resend
         </div>
       </footer>
     </div>

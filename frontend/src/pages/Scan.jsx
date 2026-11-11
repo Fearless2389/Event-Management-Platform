@@ -27,15 +27,33 @@ export default function Scan() {
         const cams = await Html5Qrcode.getCameras()
         if (cancelled) return
         if (!cams || cams.length === 0) {
-          setError('No webcam detected. Switch to Paste mode.')
+          setError('No webcam detected. Switch to Paste mode below.')
           return
         }
-        await scanner.start(
+        const config = { fps: 10, qrbox: 250 }
+        const sources = [
           { facingMode: 'environment' },
-          { fps: 10, qrbox: 250 },
-          handleDecode,
-          () => {},
-        )
+          { facingMode: 'user' },
+          cams[0].id,
+        ]
+        let started = false
+        let lastErr = null
+        for (const src of sources) {
+          if (cancelled) return
+          try {
+            await scanner.start(src, config, handleDecode, () => {})
+            started = true
+            break
+          } catch (err) {
+            lastErr = err
+          }
+        }
+        if (!started && !cancelled) {
+          setError(
+            'Could not start the camera. Switch to Paste mode below, or check that no other app is using the webcam.',
+          )
+          if (lastErr) console.warn('[scan] camera start failed:', lastErr)
+        }
       } catch (e) {
         if (!cancelled) setError(e.message || 'Failed to start scanner')
       }
@@ -190,14 +208,14 @@ function ResultCard({ result, onScanAnother }) {
       )}
 
       <div className="mt-6 space-y-2">
-        {result.jspCheckinUrl && (
+        {result.checkinUrl && (
           <a
-            href={result.jspCheckinUrl}
+            href={result.checkinUrl}
             target="_blank"
             rel="noreferrer"
             className="block w-full py-2.5 rounded-xl border border-white/10 hover:border-white/30 hover:bg-white/5 transition text-sm"
           >
-            Open JSP confirmation page
+            Open confirmation page
           </a>
         )}
         <button

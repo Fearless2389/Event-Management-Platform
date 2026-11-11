@@ -17,7 +17,6 @@ const EventSchema = new mongoose.Schema(
     description: { type: String, required: true },
     venue: { type: String, required: true },
     dateTime: { type: Date, required: true },
-    capacity: { type: Number, required: true, min: 1 },
     ticketTiers: { type: [TierSchema], validate: (v) => v.length > 0 },
     imageUrl: { type: String, default: '' },
     category: {

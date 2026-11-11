@@ -2,10 +2,12 @@ import 'dotenv/config'
 import express from 'express'
 import cors from 'cors'
 import morgan from 'morgan'
+import mongoose from 'mongoose'
 
 import { connectDB } from './db.js'
 import { initEmail } from './services/email.js'
-import { userEmail } from './middleware/userEmail.js'
+import { optionalUser } from './middleware/auth.js'
+import authRouter from './routes/auth.js'
 import eventsRouter from './routes/events.js'
 import paymentsRouter from './routes/payments.js'
 import ticketsRouter from './routes/tickets.js'
@@ -15,10 +17,15 @@ const app = express()
 app.use(cors({ origin: process.env.FRONTEND_URL || true, credentials: false }))
 app.use(express.json({ limit: '1mb' }))
 app.use(morgan('dev'))
-app.use(userEmail)
+app.use(optionalUser)
 
-app.get('/api/health', (req, res) => res.json({ ok: true }))
+app.get('/api/health', (req, res) => {
+  const dbConnected = mongoose.connection.readyState === 1
+  const payload = { ok: dbConnected, db: dbConnected ? 'connected' : 'disconnected' }
+  res.status(dbConnected ? 200 : 503).json(payload)
+})
 
+app.use('/api/auth', authRouter)
 app.use('/api/events', eventsRouter)
 app.use('/api/payments', paymentsRouter)
 app.use('/api/tickets', ticketsRouter)

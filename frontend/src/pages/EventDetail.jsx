@@ -17,7 +17,7 @@ export default function EventDetail() {
     api.getEvent(id).then(setEvent).catch((e) => setError(e.message))
   }, [id])
 
-  function handleBuy(tierName) {
+  function handleBuy(tierName, qty) {
     if (!user) {
       nav('/login')
       return
@@ -26,7 +26,7 @@ export default function EventDetail() {
       toast.error('Switch to an attendee account to buy tickets.')
       return
     }
-    nav(`/events/${id}/buy/${encodeURIComponent(tierName)}`)
+    nav(`/events/${id}/buy/${encodeURIComponent(tierName)}?qty=${qty}`)
   }
 
   if (error) return <div className="alert alert-error">{error}</div>
@@ -83,9 +83,6 @@ export default function EventDetail() {
             <p className="whitespace-pre-line opacity-90 leading-relaxed">
               {event.description}
             </p>
-            <p className="text-xs opacity-50 mt-6">
-              Hosted by <span className="font-medium">{event.organizerEmail}</span>
-            </p>
           </section>
         </div>
 
@@ -93,13 +90,12 @@ export default function EventDetail() {
           <h2 className="text-xl font-bold">Pick a tier</h2>
           <div className="grid grid-cols-1 gap-3">
             {event.ticketTiers.map((t) => (
-              <TierTile key={t.name} tier={t} onBuy={() => handleBuy(t.name)} />
+              <TierTile key={t.name} tier={t} onBuy={(qty) => handleBuy(t.name, qty)} />
             ))}
           </div>
         </aside>
       </div>
 
-      {/* Sticky bottom CTA bar — mobile + organizer fallback */}
       <div className="fixed bottom-0 inset-x-0 z-30 lg:hidden">
         <div className="bg-base-200/95 backdrop-blur border-t border-white/10 px-4 py-3 flex items-center gap-3">
           <div className="flex-1">
@@ -132,9 +128,9 @@ export default function EventDetail() {
                 <TierTile
                   key={t.name}
                   tier={t}
-                  onBuy={() => {
+                  onBuy={(qty) => {
                     setPickerOpen(false)
-                    handleBuy(t.name)
+                    handleBuy(t.name, qty)
                   }}
                 />
               ))}
@@ -150,6 +146,15 @@ function TierTile({ tier, onBuy }) {
   const remaining = tier.capacity - tier.sold
   const soldOut = remaining <= 0
   const lowStock = !soldOut && remaining <= 5
+  const maxQty = Math.min(10, Math.max(1, remaining))
+  const [qty, setQty] = useState(1)
+
+  function dec() {
+    setQty((q) => Math.max(1, q - 1))
+  }
+  function inc() {
+    setQty((q) => Math.min(maxQty, q + 1))
+  }
 
   return (
     <div
@@ -174,12 +179,53 @@ function TierTile({ tier, onBuy }) {
           ₹{tier.price}
         </span>
       </div>
+
+      {!soldOut && (
+        <div className="flex items-center justify-between mb-3 bg-base-100/50 border border-white/5 rounded-lg px-3 py-2">
+          <span className="text-xs opacity-70">Quantity</span>
+          <div className="flex items-center gap-3">
+            <button
+              type="button"
+              onClick={dec}
+              disabled={qty <= 1}
+              className="w-7 h-7 rounded-full border border-white/15 disabled:opacity-30 hover:bg-white/5 flex items-center justify-center text-sm font-bold"
+              aria-label="Decrease quantity"
+            >
+              −
+            </button>
+            <span className="font-semibold text-sm w-5 text-center">{qty}</span>
+            <button
+              type="button"
+              onClick={inc}
+              disabled={qty >= maxQty}
+              className="w-7 h-7 rounded-full border border-white/15 disabled:opacity-30 hover:bg-white/5 flex items-center justify-center text-sm font-bold"
+              aria-label="Increase quantity"
+            >
+              +
+            </button>
+          </div>
+        </div>
+      )}
+
+      {!soldOut && qty > 1 && (
+        <div className="flex justify-between text-xs opacity-70 mb-2 px-1">
+          <span>
+            ₹{tier.price} × {qty}
+          </span>
+          <span className="font-semibold text-base-content">₹{tier.price * qty}</span>
+        </div>
+      )}
+
       <button
         disabled={soldOut}
-        onClick={onBuy}
+        onClick={() => onBuy(qty)}
         className="gradient-cta w-full rounded-lg py-2 text-sm font-semibold"
       >
-        {soldOut ? 'Sold out' : `Buy ${tier.name}`}
+        {soldOut
+          ? 'Sold out'
+          : qty === 1
+            ? `Buy ${tier.name}`
+            : `Buy ${qty} × ${tier.name}`}
       </button>
     </div>
   )

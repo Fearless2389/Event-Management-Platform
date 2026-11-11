@@ -7,16 +7,22 @@ import { getEventImage } from '../lib/eventImage'
 const CATEGORIES = ['Music', 'Tech', 'Comedy', 'Sports', 'Theatre', 'Other']
 const empty = () => ({ name: '', price: '', capacity: '' })
 
+function nowLocalIso() {
+  const d = new Date()
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+}
+
 export default function CreateEvent() {
   const [form, setForm] = useState({
     title: '',
     description: '',
     venue: '',
     dateTime: '',
-    capacity: '',
     imageUrl: '',
     category: 'Other',
   })
+  const minDateTime = nowLocalIso()
   const [tiers, setTiers] = useState([{ name: 'Standard', price: '', capacity: '' }])
   const [submitting, setSubmitting] = useState(false)
   const nav = useNavigate()
@@ -31,12 +37,17 @@ export default function CreateEvent() {
 
   async function submit(e) {
     e.preventDefault()
+    const trimmedTiers = tiers.map((t) => ({ ...t, name: t.name.trim() }))
+    const names = trimmedTiers.map((t) => t.name).filter(Boolean)
+    if (new Set(names).size !== names.length) {
+      toast.error('Tier names must be unique')
+      return
+    }
     setSubmitting(true)
     try {
       const payload = {
         ...form,
-        capacity: Number(form.capacity),
-        ticketTiers: tiers.map((t) => ({
+        ticketTiers: trimmedTiers.map((t) => ({
           name: t.name,
           price: Number(t.price),
           capacity: Number(t.capacity),
@@ -116,6 +127,7 @@ export default function CreateEvent() {
               <input
                 required
                 type="datetime-local"
+                min={minDateTime}
                 className="input input-bordered w-full"
                 value={form.dateTime}
                 onChange={(e) => update('dateTime', e.target.value)}
@@ -123,27 +135,14 @@ export default function CreateEvent() {
             </Field>
           </div>
 
-          <div className="grid sm:grid-cols-2 gap-4">
-            <Field label="Total capacity">
-              <input
-                required
-                type="number"
-                min="1"
-                className="input input-bordered w-full"
-                value={form.capacity}
-                onChange={(e) => update('capacity', e.target.value)}
-                placeholder="100"
-              />
-            </Field>
-            <Field label="Cover image URL (optional)">
-              <input
-                className="input input-bordered w-full"
-                value={form.imageUrl}
-                onChange={(e) => update('imageUrl', e.target.value)}
-                placeholder="https://images.unsplash.com/…"
-              />
-            </Field>
-          </div>
+          <Field label="Cover image URL (optional)">
+            <input
+              className="input input-bordered w-full"
+              value={form.imageUrl}
+              onChange={(e) => update('imageUrl', e.target.value)}
+              placeholder="https://images.unsplash.com/…"
+            />
+          </Field>
         </Section>
 
         <Section title="Tickets">
