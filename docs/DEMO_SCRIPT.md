@@ -2,21 +2,23 @@
 
 Use this verbatim for the final smoke test before submission, and as a script during the live demo.
 
-**Pre-flight:** all four servers running (MongoDB, Tomcat on 8080, backend on 3001, frontend on 5173). See [SETUP.md](SETUP.md).
+**Pre-flight:** three things running — MongoDB, backend on 3001, frontend on 5173. See [SETUP.md](SETUP.md).
 
 ---
 
 ## 1. Visit the site
 
-Open http://localhost:5173. You should see "No events yet."
+Open http://localhost:5173. You should see "No events yet." Click **Sign in** (top-right).
 
-## 2. Sign in as an organizer
+## 2. Sign up as an organizer (Alice)
 
-- Click **Login** (top-right).
-- Email: `alice@org.com`
+- Click **Create an account** under the sign-in form.
 - Name: `Alice`
+- Email: `alice@org.com`
+- Password: `password123`
+- Confirm password: `password123`
 - Role: **Organizer**
-- Click **Continue**. You land on `/dashboard`.
+- Click **Create account**. You land on `/dashboard`.
 
 ## 3. Create an event
 
@@ -26,96 +28,94 @@ Open http://localhost:5173. You should see "No events yet."
   - Description: `A one-day tech conference featuring talks on AI, web, and systems.`
   - Venue: `Bangalore International Centre`
   - Date & time: pick a future date
-  - Total capacity: `100`
   - Image URL (optional): `https://images.unsplash.com/photo-1540575467063-178a50c2df87?w=800`
+  - Category: `Tech`
 - Tiers:
   - `Standard` — ₹500 — capacity 80
   - Click **+ Add tier**: `VIP` — ₹1500 — capacity 20
 - Click **Create event**.
-- You land on the event detail page. Verify both tiers show "X left."
+- You land on the event detail page. Verify both tiers show "X available."
 
-## 4. Switch to attendee account
+## 4. Sign up as an attendee (Bob)
 
 - Click **Logout** (top-right).
-- Click **Login**.
-- Email: `bob@attend.com` / Name: `Bob` / Role: **Attendee**.
-- Click **Continue**. You land on the homepage with Tech Conf 2026 visible.
+- Click **Sign in** → **Create an account**.
+- Name: `Bob`, Email: `bob@attend.com`, Password: `password123`, Role: **Attendee**.
+- Click **Create account**. You land on the homepage with Tech Conf 2026 visible.
 
-## 5. Buy a VIP ticket
+## 5. Search and filter
+
+- Type `tech` in the search bar — Tech Conf 2026 stays visible.
+- Click the **Tech** category chip — still visible.
+- Open **Filters**, set Min price to `1000` — the event disappears (cheapest tier is ₹500).
+- Click **Clear all** to reset filters.
+
+## 6. Buy 3 VIP tickets
 
 - Click the Tech Conf 2026 card.
-- Next to **VIP** click **Buy**.
-- Confirm-purchase page shows. Click **Pay ₹1500 via Razorpay**.
+- Next to **VIP**, press the **+** button until the quantity reads `3`. The total `₹1500 × 3 = ₹4500` should display.
+- Click **Buy 3 × VIP**.
+- Confirm-purchase page shows total ₹4500. Click **Pay ₹4500 via Razorpay**.
 - Razorpay test modal opens.
-- Card number: `4111 1111 1111 1111`
-- Expiry: any future date (`12/30`)
-- CVV: `123`
-- Name: `Bob`
-- Click **Pay**.
-- Razorpay simulates a 3-D Secure step — click **Success** on the simulator page.
-- You land on `/success?ticketId=...&jspUrl=...&emailUrl=...`.
+- Easiest test method: pick **UPI**, enter `success@razorpay`, **Verify and Pay**.
+  - Or use a test card: `4111 1111 1111 1111`, any future expiry, any CVV.
+- After success, you land on `/success?id=...&id=...&id=...` showing 3 separate "Open ticket" buttons.
 
-## 6. Inspect the email
+## 7. Inspect the email
 
-- Click **View confirmation email (Ethereal preview)**.
-- A new tab opens to ethereal.email showing the HTML email with embedded QR code.
-- Confirm: event title, your name (Bob), tier (VIP), price (₹1500), QR image, and "Open printable ticket" button.
+- If `RESEND_API_KEY` is set in `.env`, the inbox you registered with at Resend will have an email titled "Your 3 tickets for Tech Conf 2026" with three QR codes.
+- If `RESEND_API_KEY` is blank, skip this step (the email is gracefully skipped).
 
-## 7. Open the printable ticket (JSP)
+## 8. Open the printable ticket
 
-- Back on the success page, click **Open printable ticket (JSP)**.
-- A new tab opens to `http://localhost:8080/event-mgmt/ticket.jsp?id=<ticketId>`.
-- Verify: event title, date, venue, attendee name, tier, ticket ID, QR code, **VALID** badge, **Print** button.
-- Click **Print** to verify print preview is clean.
+- On the success page, click **Open ticket 1**.
+- A new tab opens to `http://localhost:5173/ticket/<id>`.
+- Verify: event title, date, venue, attendee name, tier, ticket ID, QR code, **VALID** badge, **Print ticket** button.
+- Click **Print ticket** to verify print preview is clean.
 
-## 8. Switch back to organizer
+## 9. Sign back in as Alice
 
-- Logout.
-- Login as `alice@org.com` / `Alice` / **Organizer**.
+- Logout. Sign in: `alice@org.com` / `password123`.
 
-## 9. View dashboard
+## 10. View dashboard
 
-- You should already be on `/dashboard`.
-- Tech Conf 2026 row shows **1 / 100** in the Sold column.
+- You should land on `/dashboard`.
+- Tech Conf 2026 shows **3 / 100** in the Sold column (Standard 0 / 80 + VIP 3 / 20).
 
-## 10. Open the scanner
+## 11. Open the scanner
 
 - Click **Scan tickets** on the Tech Conf row.
 - Allow camera access when prompted.
 - The webcam preview appears.
 
-## 11. Scan the QR
+## 12. Scan the QR
 
-- Open the JSP printable ticket from step 7 on your phone (or any other device), or hold its tab on screen up to the webcam.
+- Open one of the printable tickets from step 8 on your phone, or hold its tab on screen up to the webcam.
 - The scanner detects and reads the QR.
-- A new tab opens to `http://localhost:8080/event-mgmt/checkin.jsp?id=<ticketId>` showing **✅ Checked in — Bob** with event details.
+- A new tab opens to `http://localhost:5173/checkin/<id>` showing **✅ Checked in — Bob**.
 
-## 12. Try scanning the same ticket again
+## 13. Try scanning the same ticket again
 
-- Hold the same QR back up to the webcam.
-- A new tab opens to `checkin.jsp?id=...&already=1` showing **⚠️ Already checked in** with the original check-in time.
-- This proves duplicate check-ins are rejected.
+- Within ~10s, scan again — still success (idempotent grace window).
+- Wait > 10s and scan again — opens `/checkin/<id>?already=1` showing **⚠️ Already checked in** with the original check-in time.
 
-## 13. Backstage check (optional, for the demo Q&A)
+## 14. Backstage check (optional, for Q&A)
 
 - Open MongoDB Compass or `mongosh`.
 - `use eventmgmt`
-- `db.events.find()` shows the Tech Conf 2026 event with `ticketTiers[1].sold = 1`.
-- `db.tickets.find()` shows Bob's ticket with `checkedIn: true` and `checkedInAt: <timestamp>`.
-
-## 14. Server logs
-
-- Backend terminal logged the order creation, signature verification, and email send.
-- Tomcat `catalina.out` (or the `startup.bat` window) logged the JSP page hits.
+- `db.users.find()` shows hashed passwords for Alice and Bob.
+- `db.events.find()` shows Tech Conf 2026 with `ticketTiers[1].sold = 3`.
+- `db.tickets.find()` shows three rows; one has `checkedIn: true`.
 
 ---
 
-## What this demonstrates (for viva voce)
+## What this demonstrates
 
-- **MongoDB:** stores events and tickets; both Node and Java connect to the same database.
-- **Express:** RESTful endpoints for CRUD, payments, and check-in; middleware for the X-User-Email pattern.
-- **React:** SPA with routing, role-based redirects, fetch-based API client, webcam QR scanning via `html5-qrcode`.
-- **Node.js:** server-side QR PNG generation (`qrcode`), HMAC signature verification, Nodemailer email pipeline.
-- **Razorpay test mode:** order creation via Node SDK, Checkout JS frontend integration, signature verification on the server. No real money moves.
-- **JSP:** two server-rendered pages, each with its own MongoDB connection via the official Java driver. JSP scriptlets handle data lookup and rendering.
-- **Tomcat:** servlet container for the JSP layer, packaged as a war via Maven, deployed to `webapps/`.
+- **MongoDB:** events, tickets, users.
+- **Express:** REST endpoints + JWT-bearer middleware for protected routes.
+- **React Router:** browse / detail / purchase / success / printable ticket / check-in pages.
+- **Auth:** bcryptjs password hashes, JWT in `localStorage`, role-based redirects.
+- **Razorpay test mode:** order creation, Checkout JS, HMAC signature verification — no real money moves.
+- **Multi-ticket purchase:** one Razorpay order → N tickets in one `Ticket.insertMany`.
+- **Email:** Resend SDK sends real email with N inlined QR codes.
+- **QR:** server generates the PNGs, browser renders client-side via `qrcode.react` on the printable page, scanned with `html5-qrcode`.
